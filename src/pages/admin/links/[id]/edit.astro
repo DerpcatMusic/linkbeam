@@ -1,5 +1,6 @@
 ---
-import AppLayout from "@layouts/AppLayout.astro";
+import LinkEditorLayout from "@components/LinkEditorLayout.astro";
+import LinkEditorPreviewScript from "@components/LinkEditorPreviewScript.astro";
 import AdminLinkNav from "@components/AdminLinkNav.astro";
 import Button from "@components/Button.astro";
 import Field from "@components/Field.astro";
@@ -37,21 +38,21 @@ const identityBadges = [
 ];
 ---
 
-<AppLayout title={`Edit ${link.link_name}`}>
-  <main class="admin-page shell">
-    <AdminLinkNav
-      linkId={link.id}
-      slug={link.slug}
-      linkName={link.link_name}
-      trackTitle={link.track.title}
-      artistName={artistLabel}
-      activeTab="edit"
-      artworkSrc={artworkSrc}
-      badges={identityBadges}
-    />
+<LinkEditorLayout title="" showHeader={false}>
+  <AdminLinkNav
+    slot="top"
+    linkId={link.id}
+    slug={link.slug}
+    linkName={link.link_name}
+    trackTitle={link.track.title}
+    artistName={artistLabel}
+    activeTab="edit"
+    artworkSrc={artworkSrc}
+    badges={identityBadges}
+  />
 
-    {(link.track.isrc || link.track.source_url) && (
-      <p class="track-caption">
+  {(link.track.isrc || link.track.source_url) && (
+    <p class="track-caption">
         {link.track.isrc && <span>ISRC <span class="mono">{link.track.isrc}</span></span>}
         {link.track.isrc && link.track.source_url && <span class="sep" aria-hidden="true">·</span>}
         {link.track.source_url && (
@@ -65,6 +66,10 @@ const identityBadges = [
 
     <form id="linkForm">
       <input type="hidden" name="trackId" id="trackId" value={link.track_id} />
+      <input type="hidden" id="title" name="title" value={link.track.title} />
+      <input type="hidden" id="artistName" name="artistName" value={artistLabel} />
+      <input type="hidden" id="trackPalette" name="trackPalette" value={link.track.palette ?? ""} />
+      <input type="hidden" id="artworkUrl" name="artworkUrl" value={artworkSrc} />
 
       <section class="form-block">
         <div class="block-head">
@@ -195,7 +200,6 @@ const identityBadges = [
         </div>
       </div>
     </form>
-  </main>
 
   <script is:inline define:vars={{ linkId: link.id }}>
     const form = document.querySelector("#linkForm");
@@ -325,7 +329,21 @@ const identityBadges = [
         }
         const imported = data.imported || {};
         if (data.track?.id) setValue("#trackId", data.track.id);
-        if (imported.title) setValue("#linkName", imported.title);
+        if (imported.title) {
+          setValue("#title", imported.title);
+          setValue("#linkName", imported.title);
+        }
+        if (imported.artistName || imported.artistNames?.length) {
+          setValue("#artistName", (imported.artistNames || []).join(", ") || imported.artistName);
+        }
+        if (imported.artworkUrl) setValue("#artworkUrl", imported.artworkUrl);
+        if (imported.palette) {
+          setValue("#trackPalette", typeof imported.palette === "string" ? imported.palette : JSON.stringify(imported.palette));
+        }
+        window.updateLinkEditorPreview?.({
+          artworkUrl: imported.artworkUrl,
+          palette: imported.palette ? (typeof imported.palette === "string" ? imported.palette : JSON.stringify(imported.palette)) : undefined
+        });
         if (imported.releaseAt) {
           setValue("#releaseAt", toDatetimeLocal(imported.releaseAt));
           syncModeFromRelease();
@@ -383,7 +401,9 @@ const identityBadges = [
       saveStatus.textContent = data.error || "Delete failed.";
     });
   </script>
-</AppLayout>
+
+  <LinkEditorPreviewScript slot="scripts" />
+</LinkEditorLayout>
 
 <style>
   .track-caption {

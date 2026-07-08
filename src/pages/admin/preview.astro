@@ -1,0 +1,45 @@
+---
+import LinkLayout from "@layouts/LinkLayout.astro";
+import SmartlinkFanPage from "@components/SmartlinkFanPage.astro";
+import { readPreviewDraft, resolvePreviewDraft } from "@lib/preview-draft";
+import { getRuntimeEnv, requireAdmin } from "@lib/runtime";
+
+export const prerender = false;
+
+const env = getRuntimeEnv(Astro);
+const blocked = await requireAdmin(Astro.request, env);
+if (blocked) return blocked;
+
+if (Astro.request.method !== "POST") {
+  return new Response("Method not allowed", { status: 405 });
+}
+
+const draft = resolvePreviewDraft(await readPreviewDraft(Astro.request));
+const destinationRows = draft.destinations.map((row) => ({
+  platform: row.platform,
+  cta: row.cta,
+  href: "#"
+}));
+---
+
+<LinkLayout
+  title={`${draft.title} — ${draft.artistName}`}
+  description="Link editor preview"
+  bodyClass="beamlink-link--embedded"
+>
+  <SmartlinkFanPage
+    title={draft.title}
+    artistName={draft.artistName}
+    isrc={draft.isrc}
+    artworkUrl={draft.artworkUrl}
+    paletteJson={draft.paletteJson}
+    releaseAt={draft.releaseAt}
+    effectiveMode={draft.effectiveMode}
+    pageBackgroundStyle={draft.pageBackgroundStyle}
+    buttonStyle={draft.buttonStyle}
+    destinations={destinationRows}
+    embedded
+    showDraftRibbon
+    interactive={false}
+  />
+</LinkLayout>

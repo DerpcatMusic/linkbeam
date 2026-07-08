@@ -1,5 +1,6 @@
 ---
-import AppLayout from "@layouts/AppLayout.astro";
+import LinkEditorLayout from "@components/LinkEditorLayout.astro";
+import LinkEditorPreviewScript from "@components/LinkEditorPreviewScript.astro";
 import PageStyleFields from "@components/PageStyleFields.astro";
 import PlatformIcon from "@components/PlatformIcon.astro";
 import { getRuntimeEnv, requireAdmin } from "@lib/runtime";
@@ -11,274 +12,257 @@ const blocked = await requireAdmin(Astro.request, env);
 if (blocked) return blocked;
 ---
 
-<AppLayout title="New link">
-  <main class="admin-page shell">
-    <header class="admin-header">
-      <div>
-        <a class="back" href="/admin">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-6 6 6 6" /></svg>
-          All links
-        </a>
-        <h1>New link</h1>
+<LinkEditorLayout title="New link" backHref="/admin" backLabel="All links">
+  <section class="admin-panel">
+    <div class="field">
+      <label for="importInput">Paste any streaming link or ISRC</label>
+      <input id="importInput" name="importInput" placeholder="Spotify, Apple, YouTube, Deezer… or an ISRC" />
+    </div>
+    <div class="import-preview">
+      <img id="artworkPreview" alt="" hidden />
+      <div class="manual-grid">
+        <div class="field">
+          <label for="isrc">ISRC</label>
+          <input id="isrc" name="isrc" placeholder="Filled from import" readonly />
+        </div>
+        <div class="field">
+          <label for="title">Title</label>
+          <input id="title" name="title" />
+        </div>
+        <div class="field">
+          <label for="artistName">Artist(s)</label>
+          <input id="artistName" name="artistName" placeholder="Artist One, Artist Two" />
+        </div>
+        <div class="field">
+          <label for="releaseAt">Release date</label>
+          <input id="releaseAt" name="releaseAt" type="datetime-local" />
+        </div>
       </div>
-    </header>
+    </div>
+    <div class="import-actions">
+      <button class="button secondary" id="importButton" type="button">Import metadata</button>
+      <p class="muted status" id="importStatus" aria-live="polite"></p>
+    </div>
+  </section>
 
-    <section class="admin-panel">
+  <form class="admin-panel" id="linkForm">
+    <input type="hidden" name="trackId" id="trackId" />
+    <input type="hidden" name="trackPalette" id="trackPalette" />
+    <input type="hidden" name="artworkUrl" id="artworkUrl" />
+    <div class="form-grid">
       <div class="field">
-        <label for="importInput">Paste any streaming link or ISRC</label>
-        <input id="importInput" name="importInput" placeholder="Spotify, Apple, YouTube, Deezer… or an ISRC" />
+        <label for="linkName">Link name</label>
+        <input id="linkName" name="linkName" required placeholder="Late Night Campaign" />
       </div>
-      <div class="import-preview">
-        <img id="artworkPreview" alt="" hidden />
-        <div class="manual-grid">
-          <div class="field">
-            <label for="isrc">ISRC</label>
-            <input id="isrc" name="isrc" placeholder="Filled from import" readonly />
-          </div>
-          <div class="field">
-            <label for="title">Title</label>
-            <input id="title" name="title" />
-          </div>
-          <div class="field">
-            <label for="artistName">Artist(s)</label>
-            <input id="artistName" name="artistName" placeholder="Artist One, Artist Two" />
-          </div>
-          <div class="field">
-            <label for="releaseAt">Release date</label>
-            <input id="releaseAt" name="releaseAt" type="datetime-local" />
-          </div>
+      <div class="field">
+        <label for="slug">Slug</label>
+        <input id="slug" name="slug" required placeholder="late-night" />
+      </div>
+      <div class="field">
+        <label for="mode">Mode</label>
+        <select id="mode" name="mode">
+          <option value="live">Live</option>
+          <option value="presave">Pre-save</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dest-head">
+      <h2 class="section-title">Destinations</h2>
+    </div>
+    <div class="dest-grid">
+      {(Object.entries(platformLabels) as Array<[Platform, string]>).map(([platform, label]) => (
+        <div class="field dest-field">
+          <label for={`dest-${platform}`}><PlatformIcon platform={platform} size={16} tint />{label}</label>
+          <input id={`dest-${platform}`} name={`destinations.${platform}`} placeholder="https://…" />
         </div>
-      </div>
-      <div class="import-actions">
-        <button class="button secondary" id="importButton" type="button">Import metadata</button>
-        <p class="muted status" id="importStatus" aria-live="polite"></p>
-      </div>
-    </section>
+      ))}
+    </div>
 
-    <form class="admin-panel" id="linkForm">
-      <input type="hidden" name="trackId" id="trackId" />
-      <div class="form-grid">
-        <div class="field">
-          <label for="linkName">Link name</label>
-          <input id="linkName" name="linkName" required placeholder="Late Night Campaign" />
-        </div>
-        <div class="field">
-          <label for="slug">Slug</label>
-          <input id="slug" name="slug" required placeholder="late-night" />
-        </div>
-        <div class="field">
-          <label for="mode">Mode</label>
-          <select id="mode" name="mode">
-            <option value="live">Live</option>
-            <option value="presave">Pre-save</option>
-          </select>
-        </div>
-      </div>
+    <PageStyleFields
+      backgroundStyle={DEFAULT_PAGE_BACKGROUND_STYLE}
+      buttonStyle={DEFAULT_BUTTON_STYLE}
+    />
 
-      <div class="dest-head">
-        <h2 class="section-title">Destinations</h2>
-      </div>
-      <div class="dest-grid">
-        {(Object.entries(platformLabels) as Array<[Platform, string]>).map(([platform, label]) => (
-          <div class="field dest-field">
-            <label for={`dest-${platform}`}><PlatformIcon platform={platform} size={16} tint />{label}</label>
-            <input id={`dest-${platform}`} name={`destinations.${platform}`} placeholder="https://…" />
-          </div>
-        ))}
-      </div>
+    <div class="actions">
+      <button class="button accent" type="submit">Create link</button>
+      <p class="muted status" id="saveStatus" aria-live="polite"></p>
+    </div>
+  </form>
 
-      <PageStyleFields
-        backgroundStyle={DEFAULT_PAGE_BACKGROUND_STYLE}
-        buttonStyle={DEFAULT_BUTTON_STYLE}
-      />
+  <LinkEditorPreviewScript slot="scripts" />
+</LinkEditorLayout>
 
-      <div class="actions">
-        <button class="button accent" type="submit">Create link</button>
-        <p class="muted status" id="saveStatus" aria-live="polite"></p>
-      </div>
-    </form>
-  </main>
+<script is:inline>
+  const importInput = document.querySelector("#importInput");
+  const importButton = document.querySelector("#importButton");
+  const importStatus = document.querySelector("#importStatus");
+  const saveStatus = document.querySelector("#saveStatus");
+  const artworkPreview = document.querySelector("#artworkPreview");
+  const form = document.querySelector("#linkForm");
 
-  <script is:inline>
-    const importInput = document.querySelector("#importInput");
-    const importButton = document.querySelector("#importButton");
-    const importStatus = document.querySelector("#importStatus");
-    const saveStatus = document.querySelector("#saveStatus");
-    const artworkPreview = document.querySelector("#artworkPreview");
-    const form = document.querySelector("#linkForm");
+  function value(id) {
+    return document.querySelector(id).value.trim();
+  }
 
-    function value(id) {
-      return document.querySelector(id).value.trim();
+  function setValue(id, next) {
+    const input = document.querySelector(id);
+    if (input && next) input.value = next;
+  }
+
+  function slugify(input) {
+    return input.toLowerCase().replace(/['"]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 72);
+  }
+
+  function artistNames() {
+    return value("#artistName").split(/\s*,\s*/).map((name) => name.trim()).filter(Boolean);
+  }
+
+  function toDatetimeLocal(iso) {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso.length >= 10 ? `${iso.slice(0, 10)}T00:00` : "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  function fromDatetimeLocal(value) {
+    if (!value) return undefined;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  }
+
+  function showArtwork(url) {
+    if (!url) {
+      artworkPreview.hidden = true;
+      artworkPreview.removeAttribute("src");
+      return;
     }
+    artworkPreview.src = url;
+    artworkPreview.hidden = false;
+  }
 
-    function setValue(id, next) {
-      const input = document.querySelector(id);
-      if (input && next) input.value = next;
+  function fillIfEmpty(id, next) {
+    const input = document.querySelector(id);
+    if (input && next && !input.value.trim()) input.value = next;
+  }
+
+  function syncPreviewMeta(imported) {
+    if (imported.artworkUrl) setValue("#artworkUrl", imported.artworkUrl);
+    if (imported.palette) {
+      setValue("#trackPalette", typeof imported.palette === "string" ? imported.palette : JSON.stringify(imported.palette));
     }
-
-    function slugify(input) {
-      return input.toLowerCase().replace(/['"]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 72);
-    }
-
-    function artistNames() {
-      return value("#artistName").split(/\s*,\s*/).map((name) => name.trim()).filter(Boolean);
-    }
-
-    function toDatetimeLocal(iso) {
-      if (!iso) return "";
-      const date = new Date(iso);
-      if (Number.isNaN(date.getTime())) return iso.length >= 10 ? `${iso.slice(0, 10)}T00:00` : "";
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
-
-    function fromDatetimeLocal(value) {
-      if (!value) return undefined;
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? value : date.toISOString();
-    }
-
-    function showArtwork(url) {
-      if (!url) {
-        artworkPreview.hidden = true;
-        artworkPreview.removeAttribute("src");
-        return;
-      }
-      artworkPreview.src = url;
-      artworkPreview.hidden = false;
-    }
-
-    function fillIfEmpty(id, next) {
-      const input = document.querySelector(id);
-      if (input && next && !input.value.trim()) input.value = next;
-    }
-
-    async function runImport(sourceOverride) {
-      const source = (sourceOverride ?? importInput.value ?? "").trim();
-      if (!source) {
-        importStatus.textContent = "Paste a link or ISRC first.";
-        return null;
-      }
-      importStatus.textContent = "Fetching metadata…";
-      const body = {
-        importInput: source,
-        trackId: value("#trackId") || undefined,
-        isrc: value("#isrc") || undefined,
-        title: value("#title") || undefined,
-        artistName: value("#artistName") || undefined,
-        artistNames: artistNames(),
-        releaseAt: fromDatetimeLocal(value("#releaseAt"))
-      };
-      const response = await fetch("/api/admin/import-track", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        importStatus.textContent = data.error || "Could not read that link.";
-        return null;
-      }
-      const imported = data.imported || {};
-      setValue("#isrc", imported.isrc);
-      setValue("#title", imported.title);
-      setValue("#artistName", (imported.artistNames || []).join(", ") || imported.artistName);
-      setValue("#releaseAt", toDatetimeLocal(imported.releaseAt));
-      showArtwork(imported.artworkUrl);
-      if (data.track) document.querySelector("#trackId").value = data.track.id;
-      if (imported.title) fillIfEmpty("#linkName", imported.title);
-      if (imported.title) fillIfEmpty("#slug", slugify(imported.title));
-      // Fill every store link Odesli found, without clobbering what you typed.
-      for (const [platform, url] of Object.entries(imported.destinations || {})) {
-        fillIfEmpty(`#dest-${platform}`, url);
-      }
-      importStatus.textContent = imported.title
-        ? `Found ${imported.title}${imported.artistName ? ` — ${imported.artistName}` : ""}.`
-        : "Fetched. Add a title and artist to save.";
-      return data;
-    }
-
-    importButton.addEventListener("click", () => runImport());
-
-    // Paste any store link into a destination and we resolve the rest.
-    let autoImporting = false;
-    async function autoImportFrom(input) {
-      const url = input.value.trim();
-      if (autoImporting || !/^https?:\/\//i.test(url)) return;
-      if (value("#title") && value("#trackId")) return; // track already resolved
-      autoImporting = true;
-      await runImport(url);
-      autoImporting = false;
-    }
-    for (const input of form.querySelectorAll("[name^='destinations.']")) {
-      input.addEventListener("paste", () => setTimeout(() => autoImportFrom(input), 0));
-      input.addEventListener("change", () => autoImportFrom(input));
-    }
-
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      saveStatus.textContent = "Saving...";
-      let trackId = value("#trackId");
-      if (!trackId) {
-        saveStatus.textContent = "Creating track...";
-        const importData = await runImport();
-        if (!importData?.track) {
-          saveStatus.textContent = "Add a title and artist before creating the link.";
-          return;
-        }
-        trackId = importData.track.id;
-        document.querySelector("#trackId").value = trackId;
-      }
-
-      const destinations = {};
-      for (const input of form.querySelectorAll("[name^='destinations.']")) {
-        destinations[input.name.replace("destinations.", "")] = input.value.trim();
-      }
-      const body = {
-        trackId,
-        linkName: value("#linkName"),
-        slug: value("#slug"),
-        mode: value("#mode"),
-        pageBackgroundStyle: form.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
-        buttonStyle: form.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
-        destinations,
-        releaseAt: fromDatetimeLocal(value("#releaseAt"))
-      };
-      const response = await fetch("/api/admin/links", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        saveStatus.textContent = data.error || "Save failed.";
-        return;
-      }
-      window.location.href = `/admin/links/${data.link.id}`;
+    window.updateLinkEditorPreview?.({
+      artworkUrl: imported.artworkUrl,
+      palette: imported.palette ? (typeof imported.palette === "string" ? imported.palette : JSON.stringify(imported.palette)) : undefined
     });
-  </script>
-</AppLayout>
+  }
+
+  async function runImport(sourceOverride) {
+    const source = (sourceOverride ?? importInput.value ?? "").trim();
+    if (!source) {
+      importStatus.textContent = "Paste a link or ISRC first.";
+      return null;
+    }
+    importStatus.textContent = "Fetching metadata…";
+    const body = {
+      importInput: source,
+      trackId: value("#trackId") || undefined,
+      isrc: value("#isrc") || undefined,
+      title: value("#title") || undefined,
+      artistName: value("#artistName") || undefined,
+      artistNames: artistNames(),
+      releaseAt: fromDatetimeLocal(value("#releaseAt"))
+    };
+    const response = await fetch("/api/admin/import-track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      importStatus.textContent = data.error || "Could not read that link.";
+      return null;
+    }
+    const imported = data.imported || {};
+    setValue("#isrc", imported.isrc);
+    setValue("#title", imported.title);
+    setValue("#artistName", (imported.artistNames || []).join(", ") || imported.artistName);
+    setValue("#releaseAt", toDatetimeLocal(imported.releaseAt));
+    showArtwork(imported.artworkUrl);
+    syncPreviewMeta(imported);
+    if (data.track) document.querySelector("#trackId").value = data.track.id;
+    if (imported.title) fillIfEmpty("#linkName", imported.title);
+    if (imported.title) fillIfEmpty("#slug", slugify(imported.title));
+    for (const [platform, url] of Object.entries(imported.destinations || {})) {
+      fillIfEmpty(`#dest-${platform}`, url);
+    }
+    importStatus.textContent = imported.title
+      ? `Found ${imported.title}${imported.artistName ? ` — ${imported.artistName}` : ""}.`
+      : "Fetched. Add a title and artist to save.";
+    return data;
+  }
+
+  importButton.addEventListener("click", () => runImport());
+
+  let autoImporting = false;
+  async function autoImportFrom(input) {
+    const url = input.value.trim();
+    if (autoImporting || !/^https?:\/\//i.test(url)) return;
+    if (value("#title") && value("#trackId")) return;
+    autoImporting = true;
+    await runImport(url);
+    autoImporting = false;
+  }
+  for (const input of form.querySelectorAll("[name^='destinations.']")) {
+    input.addEventListener("paste", () => setTimeout(() => autoImportFrom(input), 0));
+    input.addEventListener("change", () => autoImportFrom(input));
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    saveStatus.textContent = "Saving...";
+    let trackId = value("#trackId");
+    if (!trackId) {
+      saveStatus.textContent = "Creating track...";
+      const importData = await runImport();
+      if (!importData?.track) {
+        saveStatus.textContent = "Add a title and artist before creating the link.";
+        return;
+      }
+      trackId = importData.track.id;
+      document.querySelector("#trackId").value = trackId;
+    }
+
+    const destinations = {};
+    for (const input of form.querySelectorAll("[name^='destinations.']")) {
+      destinations[input.name.replace("destinations.", "")] = input.value.trim();
+    }
+    const body = {
+      trackId,
+      linkName: value("#linkName"),
+      slug: value("#slug"),
+      mode: value("#mode"),
+      pageBackgroundStyle: form.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
+      buttonStyle: form.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
+      destinations,
+      releaseAt: fromDatetimeLocal(value("#releaseAt"))
+    };
+    const response = await fetch("/api/admin/links", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      saveStatus.textContent = data.error || "Save failed.";
+      return;
+    }
+    window.location.href = `/admin/links/${data.link.id}`;
+  });
+</script>
 
 <style>
-  .back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.5rem;
-    color: var(--muted);
-    font-size: var(--text-sm);
-    font-weight: 500;
-    transition: color var(--transition-fast);
-  }
-
-  .back:hover {
-    color: var(--foreground);
-  }
-
-  .admin-header h1 {
-    margin-bottom: 0;
-  }
-
   .import-preview {
     display: grid;
     gap: 1rem;

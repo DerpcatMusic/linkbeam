@@ -1,0 +1,89 @@
+<script is:inline define:vars={{ previewEndpoint: "/admin/preview", debounceMs: 280 }}>
+  (function initLinkEditorPreview() {
+    const frame = document.querySelector("#linkPreviewFrame");
+    const root = document.querySelector(".link-editor");
+    if (!frame || !root) return;
+
+    const paletteInput = document.querySelector("#trackPalette");
+    const artworkInput = document.querySelector("#artworkUrl");
+    let timer = 0;
+    let requestId = 0;
+
+    function value(id) {
+      return document.querySelector(id)?.value?.trim() ?? "";
+    }
+
+    function fromDatetimeLocal(raw) {
+      if (!raw) return null;
+      const date = new Date(raw);
+      return Number.isNaN(date.getTime()) ? raw : date.toISOString();
+    }
+
+    function collectDraft() {
+      const destinations = {};
+      for (const input of root.querySelectorAll("[name^='destinations.']")) {
+        const key = input.name.replace("destinations.", "");
+        const next = input.value.trim();
+        if (next) destinations[key] = next;
+      }
+
+      const palette = paletteInput?.value?.trim();
+      const artworkUrl = artworkInput?.value?.trim() || document.querySelector("#artworkPreview")?.getAttribute("src") || "";
+
+      return {
+        title: value("#title") || value("#linkName"),
+        artistName: value("#artistName"),
+        isrc: value("#isrc") || undefined,
+        artworkUrl: artworkUrl || undefined,
+        palette: palette || undefined,
+        releaseAt: fromDatetimeLocal(value("#releaseAt")),
+        mode: value("#mode") || "live",
+        pageBackgroundStyle: root.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
+        buttonStyle: root.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
+        destinations
+      };
+    }
+
+    async function refreshPreview() {
+      const current = ++requestId;
+      try {
+        const response = await fetch(previewEndpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(collectDraft()),
+          credentials: "same-origin"
+        });
+        if (!response.ok || current !== requestId) return;
+        const html = await response.text();
+        if (current !== requestId) return;
+        frame.srcdoc = html;
+      } catch {
+        // Keep the last good preview if a refresh fails mid-edit.
+      }
+    }
+
+    function schedulePreview() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(refreshPreview, debounceMs);
+    }
+
+    function bindPreviewUpdates() {
+      const watched = root.querySelectorAll(
+        "input, select, textarea, input[name='pageBackgroundStyle'], input[name='buttonStyle']"
+      );
+      for (const element of watched) {
+        element.addEventListener("input", schedulePreview);
+        element.addEventListener("change", schedulePreview);
+      }
+    }
+
+    window.updateLinkEditorPreview = function updateLinkEditorPreview(patch = {}) {
+      if (patch.palette !== undefined && paletteInput) paletteInput.value = patch.palette;
+      if (patch.artworkUrl !== undefined && artworkInput) artworkInput.value = patch.artworkUrl;
+      schedulePreview();
+    };
+
+    bindPreviewUpdates();
+    refreshPreview();
+  })();
+</script>
