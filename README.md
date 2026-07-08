@@ -3,6 +3,7 @@
 **Fast first-party music smartlinks** — self-hosted on Cloudflare Workers with edge-rendered link pages, first-party analytics, and server-side Meta Pixel/CAPI.
 
 **Documentation:** [derpcatmusic.github.io/beamlink](https://derpcatmusic.github.io/beamlink)  
+**AI setup prompt:** [derpcatmusic.github.io/beamlink/ai.html](https://derpcatmusic.github.io/beamlink/ai.html)  
 **Repository:** [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMusic/beamlink)
 
 ## Stack
@@ -31,6 +32,7 @@ bun run dev
 
 | Guide | Description |
 |-------|-------------|
+| [AI setup](https://derpcatmusic.github.io/beamlink/ai.html) | Copy-paste prompt for Cursor, Claude Code, Copilot |
 | [Getting started](https://derpcatmusic.github.io/beamlink/getting-started.html) | Install, resources, migrations, deploy |
 | [Configuration](https://derpcatmusic.github.io/beamlink/configuration.html) | Bindings, vars, secrets, routes |
 | [Admin workflow](https://derpcatmusic.github.io/beamlink/admin.html) | Create and publish smartlinks |

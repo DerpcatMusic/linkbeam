@@ -315,3 +315,122 @@ td code {
     scroll-behavior: auto;
   }
 }
+
+/* AI integration prompt panel */
+.prompt-card {
+  margin: 1.5rem 0 2rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #0c0c10;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+.prompt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.prompt-dots {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.prompt-dots i {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.prompt-dots i:nth-child(1) {
+  background: #ff5f57;
+}
+
+.prompt-dots i:nth-child(2) {
+  background: #febc2e;
+}
+
+.prompt-dots i:nth-child(3) {
+  background: #28c840;
+}
+
+.prompt-title {
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.copy-btn {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  border-color: var(--beam);
+  color: var(--beam-ink);
+}
+
+.copy-btn.is-copied {
+  border-color: #28c840;
+  color: #8ce99a;
+}
+
+.prompt-body {
+  margin: 0;
+  overflow: auto;
+  max-height: 28rem;
+  padding: 1.1rem 1.2rem;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.tool-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1.25rem;
+}
+
+.tool-pills span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tool-pills a {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.tool-pills a:hover {
+  border-color: var(--beam);
+  color: var(--beam-ink);
+  text-decoration: none;
+}

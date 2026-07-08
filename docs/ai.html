@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI setup — Beamlink docs</title>
+    <meta
+      name="description"
+      content="Copy this Beamlink integration prompt into Cursor, Claude Code, Codex, or GitHub Copilot to self-host music smartlinks on Cloudflare."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="assets/docs.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell site-header-inner">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true"></span>
+          beamlink
+        </a>
+        <nav class="header-links" aria-label="Header">
+          <a href="index.html">Home</a>
+          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell docs-layout">
+      <aside class="sidebar">
+        <h2>Documentation</h2>
+        <nav aria-label="Docs">
+          <a href="ai.html" aria-current="page">AI setup</a>
+          <a href="getting-started.html">Getting started</a>
+          <a href="configuration.html">Configuration</a>
+          <a href="admin.html">Admin workflow</a>
+          <a href="tracking.html">Meta tracking</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <h1>AI Agent Integration Prompt</h1>
+        <p class="lede">
+          Copy this prompt into your coding assistant. It gives grounded context on how Beamlink
+          self-hosts on Cloudflare — so the agent can walk you through wrangler setup, Meta CAPI,
+          and your first smartlink without guessing.
+        </p>
+
+        <div class="prompt-card">
+          <div class="prompt-toolbar">
+            <span class="prompt-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="prompt-title">AI Agent Integration Prompt</span>
+            <button class="copy-btn" type="button" data-copy-prompt>COPY</button>
+          </div>
+          <pre class="prompt-body" id="integration-prompt">Loading prompt…</pre>
+        </div>
+
+        <div class="tool-pills">
+          <span>Paste into</span>
+          <a href="https://cursor.com">Cursor</a>
+          <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a>
+          <a href="https://developers.openai.com/codex">Codex</a>
+          <a href="https://github.com/features/copilot">GitHub Copilot</a>
+          <a href="https://windsurf.com">Windsurf</a>
+          <a href="https://devin.ai">Devin</a>
+        </div>
+
+        <h2>Machine-readable docs</h2>
+        <p>For agents that can fetch URLs directly, also provide:</p>
+        <ul>
+          <li><a href="llms.txt"><code>llms.txt</code></a> — compact doc index (llms.txt standard)</li>
+          <li><a href="llms-full.txt"><code>llms-full.txt</code></a> — full integration prompt + doc summaries</li>
+          <li><a href="ai-integration-prompt.txt"><code>ai-integration-prompt.txt</code></a> — raw prompt only</li>
+        </ul>
+
+        <div class="panel">
+          <p>
+            <strong>Tip:</strong> Fill in the <code>My Project Context</code> section after pasting —
+            mention your domain, whether you have Meta credentials, and if you already run a
+            <code>music-shortlink</code> deploy.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer-inner">
+        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+
+    <script>
+      (async () => {
+        const pre = document.getElementById("integration-prompt");
+        const btn = document.querySelector("[data-copy-prompt]");
+        let text = "";
+
+        try {
+          const res = await fetch("ai-integration-prompt.txt");
+          text = await res.text();
+          pre.textContent = text;
+        } catch {
+          text = "Could not load prompt. Open ai-integration-prompt.txt directly.";
+          pre.textContent = text;
+        }
+
+        btn?.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(text);
+            btn.textContent = "COPIED";
+            btn.classList.add("is-copied");
+            setTimeout(() => {
+              btn.textContent = "COPY";
+              btn.classList.remove("is-copied");
+            }, 1800);
+          } catch {
+            const range = document.createRange();
+            range.selectNodeContents(pre);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

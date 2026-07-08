@@ -1,0 +1,100 @@
+# Beamlink — full documentation bundle for AI agents
+
+Source: https://derpcatmusic.github.io/beamlink/llms-full.txt
+
+I want to self-host Beamlink — open-source music smartlinks on Cloudflare Workers — for my label. Analyze my project and recommend the best integration approach.
+
+## My Project Context
+
+[Describe your stack: Cloudflare account ready? Custom domain? Meta Pixel + CAPI credentials? Existing music-shortlink deploy? Bun/Node installed?]
+
+## Two Integration Approaches
+
+Beamlink is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SDK you npm-install.
+
+### Approach 1: Fresh self-host (RECOMMENDED)
+
+**Best for:** New operators with their own Cloudflare account and domain.
+
+**How it works:**
+1. Clone https://github.com/DerpcatMusic/beamlink
+2. Create Cloudflare resources: D1, KV (`LINK_CACHE`), R2 (`beamlink-artwork`), Queues (`beamlink-conversions` + DLQ)
+3. Fill placeholder IDs in `wrangler.jsonc`; set `PUBLIC_BASE_URL` to your domain
+4. Run `bun run db:migrate:local` then `bun run db:migrate`
+5. Set secrets: `META_PIXEL_ID`, `META_ACCESS_TOKEN` (optional: Spotify, Cloudflare Access, admin password)
+6. `bun run dev` locally, then `bun run deploy`
+7. Open `/admin/onboarding` — wizard validates bindings and generates wrangler snippets
+
+**Fan flow:** Meta ad → `/:slug` fan page → `/out/:slug/:platform` redirect with server-side CAPI.
+
+### Approach 2: Deployment fork (existing Cloudflare resources)
+
+**Best for:** Operators who already deployed under the `music-shortlink` worker name and want to keep existing D1/KV/R2/queue IDs.
+
+**How it works:**
+1. Use https://github.com/DerpcatMusic/music-shortlink as a deployment fork
+2. Develop features in the main `beamlink` repo
+3. Run `./scripts/sync-from-beamlink.sh` to pull product code while preserving `wrangler.jsonc` and domain config
+4. Deploy to your existing `links.*` domain
+
+## Documentation (read before writing code)
+
+- Index: https://derpcatmusic.github.io/beamlink/llms.txt
+- Full bundle: https://derpcatmusic.github.io/beamlink/llms-full.txt
+- Getting started: https://derpcatmusic.github.io/beamlink/getting-started.html
+- Configuration: https://derpcatmusic.github.io/beamlink/configuration.html
+- Admin workflow: https://derpcatmusic.github.io/beamlink/admin.html
+- Meta tracking: https://derpcatmusic.github.io/beamlink/tracking.html
+
+## Stack Reference
+
+- **Runtime:** Cloudflare Workers (`src/worker.ts` — fetch + queue consumer + cron CAPI retry)
+- **Framework:** Astro 7 server output via `@astrojs/cloudflare`
+- **Data:** D1 (links, metrics, settings), KV (published link cache), R2 (artwork)
+- **Tracking:** `src/lib/tracking.ts` — first-party `_fbp`/`_fbc` cookies, Meta CAPI via Queue, bot filtering
+- **Admin:** `/admin/*` — Cloudflare Access JWT or password session
+- **Routes:** `/:slug` (fan page), `/out/:slug/:platform` (click + CAPI), `/api/*` (import, subscribe)
+
+## What I need you to do
+
+1. Fetch https://derpcatmusic.github.io/beamlink/llms-full.txt (or the doc pages above) for grounded context
+2. Recommend Approach 1 or 2 based on my project context
+3. Walk me through `wrangler.jsonc` setup with my Cloudflare resource IDs
+4. Configure Meta CAPI secrets and validate with the onboarding pixel test
+5. Help me create and publish my first smartlink from a Spotify or TooLost URL
+6. Do not add client frameworks to fan pages — Beamlink is server-rendered HTML by design
+
+## Constraints
+
+- Fan pages (`/:slug`) must stay fast: no React/Vue, minimal client JS
+- Meta events must use server-side CAPI with `event_id` deduplication — do not replace with browser-only pixel
+- Bot traffic is excluded from metrics — preserve `src/lib/bots.ts` behavior
+- `WORKER_NAME` in wrangler vars controls onboarding resource naming snippets
+
+---
+
+# Getting started (summary)
+
+- Clone https://github.com/DerpcatMusic/beamlink, bun install
+- Create D1, KV LINK_CACHE, R2 beamlink-artwork, Queues beamlink-conversions + DLQ
+- Fill wrangler.jsonc IDs, bun run db:migrate:local && bun run db:migrate
+- Secrets: META_PIXEL_ID, META_ACCESS_TOKEN, optional Spotify + admin auth
+- bun run dev, open /admin/onboarding, bun run deploy
+
+# Configuration (summary)
+
+Bindings: DB (D1), LINK_CACHE (KV), ARTWORK (R2), CONVERSION_EVENTS (Queue)
+Vars: PUBLIC_BASE_URL, WORKER_NAME, META_API_VERSION, META_CONVERSION_VALUE, META_CURRENCY
+Routes: / (marketing), /:slug (fan), /out/:slug/:platform (click), /admin/*, /api/*
+Cron: */15 * * * * retries failed CAPI events
+
+# Admin workflow (summary)
+
+Import from TooLost, Spotify, Apple Music, or ISRC. Publish to /:slug. Presave auto-switches to live on release date.
+Analytics: views, clicks, CTR, platform/geo/referrer, funnel, heatmaps. Bots excluded.
+
+# Meta tracking (summary)
+
+First-party cookies _fbp, _fbc, _dg_vid, _dg_attr. CAPI via Queue with event_id dedup.
+Events: PageView on fan page, Lead on outbound click, Subscribe on presave email.
+Bot filtering in src/lib/bots.ts. Failed events retry via cron.
