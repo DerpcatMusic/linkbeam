@@ -109,13 +109,14 @@ export interface DualSeriesChart {
   viewsLine: string;
   clicksLine: string;
   yTicks: Array<{ y: number; value: number; label: string }>;
-  xTicks: Array<{ x: number; label: string }>;
+  xTicks: Array<{ x: number; label: string; anchor?: "start" | "middle" | "end" }>;
   markers: ChartMarker[];
 }
 
 export function normalizeAnalyticsOptions(params: URLSearchParams): AnalyticsOptions {
   const range = Number(params.get("range"));
-  const days = range === 7 || range === 90 ? range : 30;
+  // Default to a week of daily points — operators check this often; 30/90 stay one click away.
+  const days = range === 30 || range === 90 ? range : 7;
   const view = params.get("view") === "table" ? "table" : "chart";
   const unique = params.get("unique") === "1";
   const granularity: Granularity = params.get("granularity") === "hourly" ? "hourly" : "daily";
@@ -543,21 +544,24 @@ function formatHourLabel(bucket: string): string {
 
 export function buildDualSeriesChart(
   points: TimeseriesPoint[],
-  { width = 640, height = 200, labelFormat = "day" }: { width?: number; height?: number; labelFormat?: "day" | "hour" } = {}
+  { width = 640, height = 240, labelFormat = "day" }: { width?: number; height?: number; labelFormat?: "day" | "hour" } = {}
 ): DualSeriesChart {
   const formatLabel = labelFormat === "hour" ? formatHourLabel : formatDayLabel;
-  const padding = { top: 12, right: 12, bottom: 28, left: 40 };
+  // Room for y-labels, peak markers, and x-labels without clipping at the viewBox edge.
+  const padding = { top: 18, right: 16, bottom: 34, left: 44 };
   const plotWidth = Math.max(width - padding.left - padding.right, 1);
   const plotHeight = Math.max(height - padding.top - padding.bottom, 1);
   const baselineY = padding.top + plotHeight;
   const maxValue = Math.max(...points.map((point) => Math.max(point.views, point.clicks)), 1);
   const step = points.length > 1 ? plotWidth / (points.length - 1) : 0;
+  // Keep peaks slightly inside the plot so stroke + hover dots never kiss the top edge.
+  const peakInset = Math.min(6, plotHeight * 0.04);
 
   const markers: ChartMarker[] = points.map((point, index) => {
     const prior = index > 0 ? points[index - 1] : null;
     const x = padding.left + index * step;
-    const viewsY = padding.top + plotHeight - (point.views / maxValue) * plotHeight;
-    const clicksY = padding.top + plotHeight - (point.clicks / maxValue) * plotHeight;
+    const viewsY = padding.top + peakInset + (plotHeight - peakInset) - (point.views / maxValue) * (plotHeight - peakInset);
+    const clicksY = padding.top + peakInset + (plotHeight - peakInset) - (point.clicks / maxValue) * (plotHeight - peakInset);
     return {
       x,
       viewsY,
@@ -583,14 +587,21 @@ export function buildDualSeriesChart(
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
     const value = maxValue * ratio;
-    const y = padding.top + plotHeight - ratio * plotHeight;
+    const y = padding.top + peakInset + (plotHeight - peakInset) - ratio * (plotHeight - peakInset);
     return { y, value, label: formatTick(value) };
   });
 
-  const labelEvery = Math.max(1, Math.ceil(points.length / 6));
+  // Fewer labels on dense ranges so day/hour text doesn't collide or overhang.
+  const targetLabels = labelFormat === "hour" ? 5 : points.length <= 8 ? points.length : 6;
+  const labelEvery = Math.max(1, Math.ceil(points.length / targetLabels));
   const xTicks = markers
     .filter((_, index) => index % labelEvery === 0 || index === markers.length - 1)
-    .map((marker) => ({ x: marker.x, label: marker.label }));
+    .map((marker, _i, selected) => {
+      const isFirst = marker.x === selected[0]?.x;
+      const isLast = marker.x === selected[selected.length - 1]?.x;
+      const anchor: "start" | "middle" | "end" = isFirst ? "start" : isLast ? "end" : "middle";
+      return { x: marker.x, label: marker.label, anchor };
+    });
 
   return {
     width,

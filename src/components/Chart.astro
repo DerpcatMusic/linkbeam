@@ -16,7 +16,7 @@ interface Props {
 const {
   series,
   width = 640,
-  height = 240,
+  height = 248,
   ariaLabel,
   labelFormat = "day",
   viewsLabel = "Views",
@@ -41,80 +41,95 @@ const markerPayload = chart.markers.map((marker) => ({
   priorViews: marker.priorViews,
   priorClicks: marker.priorClicks
 }));
+const empty = series.length === 0;
 ---
 
-<figure class="chart-wrap" data-chart={chartId} tabindex="0" aria-label={ariaLabel}>
-  <svg
-    class="chart"
-    viewBox={`0 0 ${chart.width} ${chart.height}`}
-    width="100%"
-    height={chart.height}
-    role="img"
-    aria-hidden="true"
-  >
-    {chart.yTicks.map((tick) => (
-      <g>
-        <line
-          class="grid"
-          x1={chart.padding.left}
-          x2={plotRight}
-          y1={tick.y}
-          y2={tick.y}
-        />
-        <text class="axis y" x={chart.padding.left - 6} y={tick.y + 3} text-anchor="end">
-          {tick.label}
-        </text>
-      </g>
-    ))}
+<figure class="chart-wrap" data-chart={chartId} tabindex={empty ? -1 : 0} aria-label={ariaLabel}>
+  {empty ? (
+    <div class="chart-empty" role="status">
+      <p class="chart-empty-title">No traffic in this window</p>
+      <p class="chart-empty-copy">Open the public link or wait for the next PageView — the chart fills in as events land.</p>
+    </div>
+  ) : (
+    <>
+      <div class="chart-stage">
+        <svg
+          class="chart"
+          viewBox={`0 0 ${chart.width} ${chart.height}`}
+          width="100%"
+          height={chart.height}
+          role="img"
+          aria-hidden="true"
+        >
+          {chart.yTicks.map((tick) => (
+            <g>
+              <line
+                class="grid"
+                x1={chart.padding.left}
+                x2={plotRight}
+                y1={tick.y}
+                y2={tick.y}
+              />
+              <text class="axis y" x={chart.padding.left - 8} y={tick.y + 3.5} text-anchor="end">
+                {tick.label}
+              </text>
+            </g>
+          ))}
 
-    <path class="area views" d={chart.viewsArea} />
-    <path class="area clicks" d={chart.clicksArea} />
-    <path class="line views" d={chart.viewsLine} />
-    <path class="line clicks" d={chart.clicksLine} />
+          <path class="area views" d={chart.viewsArea} />
+          <path class="area clicks" d={chart.clicksArea} />
+          <path class="line views" d={chart.viewsLine} />
+          <path class="line clicks" d={chart.clicksLine} />
 
-    <line
-      class="crosshair"
-      x1={chart.padding.left}
-      x2={chart.padding.left}
-      y1={chart.padding.top}
-      y2={plotBottom}
-      visibility="hidden"
-    />
-    <circle class="hover-dot views" r="4" visibility="hidden" />
-    <circle class="hover-dot clicks" r="4" visibility="hidden" />
+          <line
+            class="crosshair"
+            x1={chart.padding.left}
+            x2={chart.padding.left}
+            y1={chart.padding.top}
+            y2={plotBottom}
+            visibility="hidden"
+          />
+          <circle class="hover-dot views" r="4.5" visibility="hidden" />
+          <circle class="hover-dot clicks" r="4.5" visibility="hidden" />
 
-    <rect
-      class="plot-hit"
-      x={chart.padding.left}
-      y={chart.padding.top}
-      width={chart.plotWidth}
-      height={chart.plotHeight}
-      fill="transparent"
-    />
+          <rect
+            class="plot-hit"
+            x={chart.padding.left}
+            y={chart.padding.top}
+            width={chart.plotWidth}
+            height={chart.plotHeight}
+            fill="transparent"
+          />
 
-    {chart.xTicks.map((tick) => (
-      <text class="axis x" x={tick.x} y={chart.height - 8} text-anchor="middle">
-        {tick.label}
-      </text>
-    ))}
-  </svg>
+          {chart.xTicks.map((tick) => (
+            <text class="axis x" x={tick.x} y={chart.height - 10} text-anchor={tick.anchor ?? "middle"}>
+              {tick.label}
+            </text>
+          ))}
+        </svg>
 
-  <div class="legend" aria-hidden="true">
-    <span class="legend-item views">{viewsLabel}</span>
-    <span class="legend-item clicks">{clicksLabel}</span>
-  </div>
+        <div class="chart-tooltip" hidden aria-live="polite">
+          <p class="chart-tooltip-title"></p>
+          <dl class="chart-tooltip-stats"></dl>
+        </div>
+      </div>
 
-  <div class="chart-tooltip" hidden aria-live="polite">
-    <p class="chart-tooltip-title"></p>
-    <dl class="chart-tooltip-stats"></dl>
-  </div>
+      <div class="legend" aria-hidden="true">
+        <span class="legend-item views">{viewsLabel}</span>
+        <span class="legend-item clicks">{clicksLabel}</span>
+        <span class="legend-hint">Hover or ← → to inspect</span>
+      </div>
+    </>
+  )}
 </figure>
 
+{!empty && (
 <script is:inline define:vars={{ chartId, viewsLabel, clicksLabel, showDelta, markerPayload, chartWidth: chart.width, chartHeight: chart.height, padding: chart.padding }}>
   (() => {
     const root = document.querySelector(`[data-chart="${chartId}"]`);
     if (!root || markerPayload.length === 0) return;
 
+    const stage = root.querySelector(".chart-stage");
     const svg = root.querySelector(".chart");
     const plotHit = root.querySelector(".plot-hit");
     const crosshair = root.querySelector(".crosshair");
@@ -123,6 +138,7 @@ const markerPayload = chart.markers.map((marker) => ({
     const tooltip = root.querySelector(".chart-tooltip");
     const tooltipTitle = root.querySelector(".chart-tooltip-title");
     const tooltipStats = root.querySelector(".chart-tooltip-stats");
+    if (!stage || !svg || !plotHit || !crosshair || !dotViews || !dotClicks || !tooltip || !tooltipTitle || !tooltipStats) return;
 
     let activeIndex = -1;
 
@@ -152,8 +168,8 @@ const markerPayload = chart.markers.map((marker) => ({
       if (showDelta) {
         const viewDelta = formatDelta(marker.deltaViews, marker.priorViews);
         const clickDelta = formatDelta(marker.deltaClicks, marker.priorClicks);
-        if (viewDelta) rows.push(["vs prior · views", viewDelta]);
-        if (clickDelta) rows.push(["vs prior · taps", clickDelta]);
+        if (viewDelta) rows.push(["vs prior day · views", viewDelta]);
+        if (clickDelta) rows.push(["vs prior day · taps", clickDelta]);
       }
       tooltipStats.replaceChildren();
       for (const [label, value] of rows) {
@@ -166,24 +182,29 @@ const markerPayload = chart.markers.map((marker) => ({
     }
 
     function positionTooltip(svgX) {
-      const rect = root.getBoundingClientRect();
-      const scale = rect.width / chartWidth;
-      const left = svgX * scale;
+      const stageRect = stage.getBoundingClientRect();
+      const scale = stageRect.width / chartWidth;
+      let left = svgX * scale;
+      // Keep the tip inside the stage so panel overflow never crops it.
+      tooltip.style.top = `${Math.max(6, padding.top * scale - 6)}px`;
+      tooltip.hidden = false;
       tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${padding.top * scale - 8}px`;
+      delete tooltip.dataset.flip;
 
       const tipRect = tooltip.getBoundingClientRect();
-      const viewportPad = 8;
-      if (tipRect.left < viewportPad) {
-        tooltip.style.left = `${left + (viewportPad - tipRect.left)}px`;
-      } else if (tipRect.right > window.innerWidth - viewportPad) {
-        tooltip.style.left = `${left - (tipRect.right - window.innerWidth + viewportPad)}px`;
+      const pad = 6;
+      if (tipRect.left < stageRect.left + pad) {
+        left += stageRect.left + pad - tipRect.left;
+        tooltip.style.left = `${left}px`;
+      } else if (tipRect.right > stageRect.right - pad) {
+        left -= tipRect.right - (stageRect.right - pad);
+        tooltip.style.left = `${left}px`;
       }
-      if (tipRect.top < viewportPad) {
-        tooltip.style.top = `${padding.top * scale + 24}px`;
+
+      const tipAfter = tooltip.getBoundingClientRect();
+      if (tipAfter.top < stageRect.top + pad) {
+        tooltip.style.top = `${padding.top * scale + 18}px`;
         tooltip.dataset.flip = "below";
-      } else {
-        delete tooltip.dataset.flip;
       }
     }
 
@@ -201,7 +222,6 @@ const markerPayload = chart.markers.map((marker) => ({
       dotClicks.setAttribute("cx", String(marker.x));
       dotClicks.setAttribute("cy", String(marker.clicksY));
       renderTooltip(marker);
-      tooltip.hidden = false;
       positionTooltip(marker.x);
     }
 
@@ -253,12 +273,13 @@ const markerPayload = chart.markers.map((marker) => ({
     });
   })();
 </script>
+)}
 
 <style>
   .chart-wrap {
     position: relative;
     display: grid;
-    gap: 0.5rem;
+    gap: 0.65rem;
     margin: 0;
     outline: none;
   }
@@ -269,6 +290,12 @@ const markerPayload = chart.markers.map((marker) => ({
     border-radius: var(--radius-sm);
   }
 
+  .chart-stage {
+    position: relative;
+    min-width: 0;
+    overflow: visible;
+  }
+
   .chart {
     width: 100%;
     height: auto;
@@ -277,28 +304,30 @@ const markerPayload = chart.markers.map((marker) => ({
   }
 
   .grid {
-    stroke: var(--border);
+    stroke: color-mix(in oklch, var(--border) 88%, transparent);
     stroke-width: 1;
   }
 
   .axis {
-    fill: var(--faint);
-    font-size: 10px;
+    fill: var(--muted);
+    font-size: 10.5px;
+    font-weight: 500;
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
   }
 
   .area.views {
-    fill: var(--accent-soft);
+    fill: color-mix(in oklch, var(--accent) 18%, transparent);
   }
 
   .area.clicks {
-    fill: var(--success-soft);
+    fill: color-mix(in oklch, var(--success) 16%, transparent);
   }
 
   .line.views {
     fill: none;
     stroke: var(--accent);
-    stroke-width: 2;
+    stroke-width: 2.25;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -306,7 +335,7 @@ const markerPayload = chart.markers.map((marker) => ({
   .line.clicks {
     fill: none;
     stroke: var(--success);
-    stroke-width: 2;
+    stroke-width: 2.25;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -314,16 +343,14 @@ const markerPayload = chart.markers.map((marker) => ({
   .crosshair {
     stroke: var(--border-strong);
     stroke-width: 1;
-    stroke-dasharray: 4 3;
+    stroke-dasharray: 3 4;
     pointer-events: none;
-    transition: opacity 120ms ease;
   }
 
   .hover-dot {
     pointer-events: none;
     stroke: var(--surface);
     stroke-width: 2;
-    transition: opacity 120ms ease;
   }
 
   .hover-dot.views {
@@ -340,10 +367,20 @@ const markerPayload = chart.markers.map((marker) => ({
 
   .legend {
     display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem 1.15rem;
     font-size: var(--text-xs);
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+    color: var(--foreground);
   }
 
   .legend-item::before {
@@ -351,9 +388,8 @@ const markerPayload = chart.markers.map((marker) => ({
     display: inline-block;
     width: 0.55rem;
     height: 0.55rem;
-    margin-right: 0.35rem;
     border-radius: var(--radius-pill);
-    vertical-align: middle;
+    flex-shrink: 0;
   }
 
   .legend-item.views::before {
@@ -364,11 +400,18 @@ const markerPayload = chart.markers.map((marker) => ({
     background: var(--success);
   }
 
+  .legend-hint {
+    margin-inline-start: auto;
+    color: var(--faint);
+    font-weight: 500;
+  }
+
   .chart-tooltip {
     position: absolute;
     transform: translate(-50%, -100%);
-    min-width: 9.5rem;
-    padding: 0.5rem 0.65rem;
+    min-width: 10.25rem;
+    max-width: min(16rem, calc(100% - 0.5rem));
+    padding: 0.55rem 0.7rem;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
     background: var(--surface-3);
@@ -377,25 +420,25 @@ const markerPayload = chart.markers.map((marker) => ({
     font-variant-numeric: tabular-nums;
     pointer-events: none;
     box-shadow: var(--shadow-pop);
-    z-index: 2;
-    transition: opacity 120ms ease;
+    z-index: 4;
   }
 
   .chart-tooltip[data-flip="below"] {
-    transform: translate(-50%, 0.5rem);
+    transform: translate(-50%, 0.35rem);
   }
 
   .chart-tooltip-title {
-    margin: 0 0 0.35rem;
-    font-weight: 600;
+    margin: 0 0 0.4rem;
+    font-weight: 650;
     font-size: var(--text-sm);
+    letter-spacing: -0.01em;
     color: var(--foreground);
   }
 
   .chart-tooltip-stats {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.15rem 0.65rem;
+    grid-template-columns: auto minmax(2.5rem, 1fr);
+    gap: 0.2rem 0.75rem;
     margin: 0;
   }
 
@@ -408,14 +451,41 @@ const markerPayload = chart.markers.map((marker) => ({
   .chart-tooltip-stats dd {
     margin: 0;
     text-align: right;
-    font-weight: 600;
+    font-weight: 650;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .crosshair,
-    .hover-dot,
-    .chart-tooltip {
-      transition: none;
+  .chart-empty {
+    display: grid;
+    gap: 0.35rem;
+    place-content: center;
+    min-height: 12rem;
+    padding: 1.5rem 1rem;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: color-mix(in oklch, var(--inset) 55%, transparent);
+    text-align: center;
+  }
+
+  .chart-empty-title {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 650;
+    color: var(--foreground);
+  }
+
+  .chart-empty-copy {
+    margin: 0;
+    max-width: 28ch;
+    justify-self: center;
+    font-size: var(--text-xs);
+    line-height: 1.45;
+    color: var(--muted);
+    text-wrap: pretty;
+  }
+
+  @media (max-width: 640px) {
+    .legend-hint {
+      display: none;
     }
   }
 </style>

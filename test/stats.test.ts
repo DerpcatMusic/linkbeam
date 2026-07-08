@@ -47,8 +47,9 @@ describe("buildDualSeriesChart", () => {
     const chart = buildDualSeriesChart(points, { width: 300, height: 120 });
     const peak = chart.markers[1];
 
-    expect(peak.viewsY).toBe(chart.padding.top);
-    expect(peak.clicksY).toBeGreaterThan(chart.padding.top);
+    expect(peak.viewsY).toBeGreaterThanOrEqual(chart.padding.top);
+    expect(peak.viewsY).toBeLessThan(chart.padding.top + 10);
+    expect(peak.clicksY).toBeGreaterThan(peak.viewsY);
   });
 
   it("handles empty and flat series", () => {
@@ -99,12 +100,17 @@ describe("analytics options", () => {
       hours: 24
     });
     expect(normalizeAnalyticsOptions(new URLSearchParams("range=900&view=nope"))).toEqual({
-      days: 30,
+      days: 7,
       view: "chart",
       unique: false,
       granularity: "daily",
       hours: 24
     });
+    expect(normalizeAnalyticsOptions(new URLSearchParams(""))).toMatchObject({
+      days: 7,
+      granularity: "daily"
+    });
+    expect(normalizeAnalyticsOptions(new URLSearchParams("range=30"))).toMatchObject({ days: 30 });
   });
 
   it("parses hourly granularity and hour range", () => {
