@@ -42,10 +42,39 @@ export function pickLargestEmbedImage(
   return [...images].sort((a, b) => (b.maxWidth ?? b.maxHeight ?? 0) - (a.maxWidth ?? a.maxHeight ?? 0))[0];
 }
 
+export function normalizeTrackText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Direct storefront links beat search-page fallbacks when merging imports. */
+export function destinationQuality(url: string): number {
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.includes("/search")) return 0;
+  } catch {
+    return 0;
+  }
+  return 1;
+}
+
 export function mergeDestinations(
   ...parts: Array<Partial<Record<string, string>>>
 ): Partial<Record<string, string>> {
-  return Object.assign({}, ...parts);
+  const out: Partial<Record<string, string>> = {};
+  for (const part of parts) {
+    for (const [key, value] of Object.entries(part)) {
+      if (!value) continue;
+      const existing = out[key];
+      if (!existing || destinationQuality(value) >= destinationQuality(existing)) {
+        out[key] = value;
+      }
+    }
+  }
+  return out;
 }
 
 export function mergeImported(primary: ImportedTrack, secondary: ImportedTrack): ImportedTrack {

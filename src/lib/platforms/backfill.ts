@@ -1,18 +1,19 @@
 import type { ImportedTrack } from "@lib/types";
 import { searchAppleMusic } from "./apple";
+import { isYouTubeSearchUrl, searchYouTubeMusic, youtubeSearchFallbackUrl } from "./youtube";
 
 function artistLabel(track: ImportedTrack): string | undefined {
   return track.artistName ?? track.artistNames?.join(", ");
 }
 
-// Odesli's free API no longer returns Apple Music or YouTube for most tracks,
-// so fill those destinations from the resolved title + artist.
+// Odesli's free API no longer returns Apple Music, YouTube, SoundCloud, or Bandcamp for
+// most major-label tracks. Apple and YouTube are backfilled from public search endpoints.
+// SoundCloud/Bandcamp have no stable unauthenticated search API — add those manually.
 export async function backfillDestinations(track: ImportedTrack): Promise<ImportedTrack> {
   const artist = artistLabel(track);
   if (!track.title || !artist) return track;
 
   const destinations = { ...track.destinations };
-  const term = `${artist} ${track.title}`.trim();
 
   if (!destinations.apple) {
     try {
@@ -23,8 +24,19 @@ export async function backfillDestinations(track: ImportedTrack): Promise<Import
     }
   }
 
-  if (!destinations.youtube) {
-    destinations.youtube = `https://music.youtube.com/search?q=${encodeURIComponent(term)}`;
+  if (!destinations.youtube || isYouTubeSearchUrl(destinations.youtube)) {
+    try {
+      const youtube = await searchYouTubeMusic(track.title, artist);
+      if (youtube) {
+        destinations.youtube = youtube;
+      } else if (!destinations.youtube) {
+        destinations.youtube = youtubeSearchFallbackUrl(track.title, artist);
+      }
+    } catch {
+      if (!destinations.youtube) {
+        destinations.youtube = youtubeSearchFallbackUrl(track.title, artist);
+      }
+    }
   }
 
   return { ...track, destinations };

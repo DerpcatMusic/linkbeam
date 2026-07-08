@@ -9,6 +9,8 @@ describe("odesli parsing", () => {
     expect(destinations.deezer).toContain("deezer.com/track/");
     expect(destinations.tidal).toContain("tidal.com/track/");
     expect(destinations.amazon).toContain("amazon");
+    expect(destinations).not.toHaveProperty("napster");
+    expect(destinations).not.toHaveProperty("pandora");
   });
 
   it("parses metadata and destinations into ImportedTrack", () => {

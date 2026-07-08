@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ImportedTrack } from "@lib/types";
+import { normalizeTrackText } from "./shared";
 
 const appleSearchSchema = z.object({
   results: z.array(
@@ -39,14 +40,6 @@ export async function importApple(sourceUrl: string): Promise<ImportedTrack> {
   };
 }
 
-function normalizeTitle(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/\([^)]*\)|\[[^\]]*\]/g, "") // drop (feat. …), [Explicit], etc.
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
 // Odesli often omits Apple Music, so resolve a real track link from metadata.
 // iTunes search is fuzzy, so only accept a result whose title actually matches:
 // a wrong Apple link is worse than none on a smartlink.
@@ -61,13 +54,13 @@ export async function searchAppleMusic(title: string, artist: string): Promise<s
   if (!response.ok) return undefined;
 
   const data = appleSearchSchema.parse(await response.json());
-  const wantTitle = normalizeTitle(title);
-  const wantArtist = normalizeTitle(primaryArtist);
+  const wantTitle = normalizeTrackText(title);
+  const wantArtist = normalizeTrackText(primaryArtist);
 
   const match = data.results.find((result) => {
     if (!result.trackViewUrl || !result.trackName) return false;
-    const gotTitle = normalizeTitle(result.trackName);
-    const gotArtist = normalizeTitle(result.artistName ?? "");
+    const gotTitle = normalizeTrackText(result.trackName);
+    const gotArtist = normalizeTrackText(result.artistName ?? "");
     const titleMatches = gotTitle === wantTitle || gotTitle.includes(wantTitle) || wantTitle.includes(gotTitle);
     const artistMatches = !wantArtist || gotArtist.includes(wantArtist) || wantArtist.includes(gotArtist);
     return titleMatches && artistMatches;

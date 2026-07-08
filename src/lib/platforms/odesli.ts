@@ -21,6 +21,8 @@ export const odesliResponseSchema = z.object({
   linksByPlatform: z.record(z.string(), odesliLinkSchema).optional()
 });
 
+// Odesli also returns anghami, boomplay, napster, pandora, yandex, etc.
+// Beamlink only maps the storefronts shown on fan smartlinks; the rest stay manual/other.
 const odesliPlatformMap: Record<string, Platform> = {
   spotify: "spotify",
   appleMusic: "apple",
