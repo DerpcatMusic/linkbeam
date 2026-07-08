@@ -51,7 +51,8 @@ export const linkBodySchema = z.object({
   status: z.enum(["draft", "published", "archived"]).optional(),
   releaseAt: z.string().nullable().optional(),
   pageBackgroundStyle: z.enum(PAGE_BACKGROUND_STYLES).optional(),
-  buttonStyle: z.enum(BUTTON_STYLES).optional()
+  buttonStyle: z.enum(BUTTON_STYLES).optional(),
+  pageStyleOptions: z.record(z.string(), z.unknown()).optional()
 });
 
 export const subscribeBodySchema = z.object({

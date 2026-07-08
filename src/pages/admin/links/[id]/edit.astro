@@ -149,6 +149,8 @@ const identityBadges = [
       <PageStyleFields
         backgroundStyle={link.page_background_style}
         buttonStyle={link.button_style}
+        pageStyleOptions={link.page_style_options}
+        paletteJson={link.track.palette}
       />
 
       <section class="form-block">
@@ -272,6 +274,9 @@ const identityBadges = [
         spotifyContextUrl: value("#spotifyContextUrl") || null,
         pageBackgroundStyle: form.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
         buttonStyle: form.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
+        pageStyleOptions: typeof window.collectPageStyleOptions === "function"
+          ? window.collectPageStyleOptions()
+          : undefined,
         releaseAt: fromDatetimeLocal(value("#releaseAt")),
         destinations,
         ...extra

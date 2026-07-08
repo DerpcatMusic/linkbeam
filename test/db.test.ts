@@ -115,7 +115,8 @@ describe("createLink", () => {
       null,
       "Stream_Click_Paid",
       "blur",
-      "monochrome"
+      "monochrome",
+      expect.stringContaining('"aurora"')
     ]);
   });
 
@@ -136,12 +137,13 @@ describe("createLink", () => {
     await createLink(env, input);
 
     const insert = calls.find((call) => call.sql.includes("INSERT INTO links"));
-    expect(insert?.bindings.slice(-5)).toEqual([
+    expect(insert?.bindings.slice(-6)).toEqual([
       "app_first",
       "spotify:playlist:abc123456789",
       "Stream_Click_Paid_Meta",
       "blur",
-      "monochrome"
+      "monochrome",
+      expect.stringContaining('"ascii"')
     ]);
   });
 

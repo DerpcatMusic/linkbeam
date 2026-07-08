@@ -1,10 +1,11 @@
 import type { ButtonStyle, PageBackgroundStyle } from "@lib/page-style";
+import type { PageStyleOptions } from "@lib/page-style-options";
 
 export type LinkMode = "presave" | "live";
 export type LinkStatus = "draft" | "published" | "archived";
 export type SpotifyOpenBehavior = "web" | "playlist_context" | "app_first";
 
-export type { ButtonStyle, PageBackgroundStyle };
+export type { ButtonStyle, PageBackgroundStyle, PageStyleOptions };
 
 export type Platform =
   | "spotify"
@@ -72,6 +73,7 @@ export interface SmartLink {
   spotify_context_url: string | null;
   page_background_style: PageBackgroundStyle;
   button_style: ButtonStyle;
+  page_style_options: PageStyleOptions;
   created_at: string;
   updated_at: string;
   published_at: string | null;

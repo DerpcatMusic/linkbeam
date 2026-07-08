@@ -1,6 +1,13 @@
 import { newId, normalizeIsrc, assertSlug } from "@lib/id";
 import { effectiveLinkMode } from "@lib/effective-mode";
 import { DEFAULT_BUTTON_STYLE, DEFAULT_PAGE_BACKGROUND_STYLE, normalizeButtonStyle, normalizePageBackgroundStyle } from "@lib/page-style";
+import {
+  DEFAULT_PAGE_STYLE_OPTIONS,
+  normalizePageStyleOptions,
+  parsePageStyleOptionsJson,
+  serializePageStyleOptions,
+  type PageStyleOptions
+} from "@lib/page-style-options";
 import type { Destination, ImportedTrack, LinkMode, Platform, SmartLink, Track } from "@lib/types";
 import { platformLabels } from "@lib/types";
 import type { RuntimeEnv } from "@lib/runtime";
@@ -23,6 +30,7 @@ type LinkRow = {
   spotify_context_url?: string | null;
   page_background_style?: string | null;
   button_style?: string | null;
+  page_style_options?: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -142,18 +150,22 @@ export async function createLink(env: RuntimeEnv, input: {
   paidClickEventName?: string;
   pageBackgroundStyle?: SmartLink["page_background_style"];
   buttonStyle?: SmartLink["button_style"];
+  pageStyleOptions?: PageStyleOptions | null;
 }): Promise<SmartLink> {
   const id = newId("lnk");
   const slug = assertSlug(input.slug);
   const status = input.status ?? "published";
   const publishedAt = status === "published" ? "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')" : "NULL";
+  const styleOptions = serializePageStyleOptions(
+    input.pageStyleOptions ? normalizePageStyleOptions(input.pageStyleOptions) : DEFAULT_PAGE_STYLE_OPTIONS
+  );
   await env.DB.prepare(
     `INSERT INTO links (
        id, track_id, link_name, slug, mode, status, published_at,
        spotify_open_behavior, spotify_context_url, paid_click_event_name,
-       page_background_style, button_style
+       page_background_style, button_style, page_style_options
      )
-     VALUES (?, ?, ?, ?, ?, ?, ${publishedAt}, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ${publishedAt}, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       id,
@@ -166,7 +178,8 @@ export async function createLink(env: RuntimeEnv, input: {
       emptyToNull(input.spotifyContextUrl),
       input.paidClickEventName?.trim() || "Stream_Click_Paid",
       input.pageBackgroundStyle ?? DEFAULT_PAGE_BACKGROUND_STYLE,
-      input.buttonStyle ?? DEFAULT_BUTTON_STYLE
+      input.buttonStyle ?? DEFAULT_BUTTON_STYLE,
+      styleOptions
     )
     .run();
   if (input.releaseAt !== undefined) {
@@ -199,6 +212,7 @@ export async function updateLink(env: RuntimeEnv, id: string, input: {
   paidClickEventName?: string;
   pageBackgroundStyle?: SmartLink["page_background_style"];
   buttonStyle?: SmartLink["button_style"];
+  pageStyleOptions?: PageStyleOptions | null;
 }): Promise<SmartLink> {
   const old = await getLinkById(env, id);
   if (!old) throw new Error("Link not found.");
@@ -238,6 +252,14 @@ export async function updateLink(env: RuntimeEnv, id: string, input: {
   if (input.buttonStyle !== undefined) {
     sets.push("button_style = ?");
     bindings.push(input.buttonStyle);
+  }
+  if (input.pageStyleOptions !== undefined) {
+    sets.push("page_style_options = ?");
+    bindings.push(
+      input.pageStyleOptions == null
+        ? serializePageStyleOptions(DEFAULT_PAGE_STYLE_OPTIONS)
+        : serializePageStyleOptions(input.pageStyleOptions)
+    );
   }
 
   bindings.push(id);
@@ -381,6 +403,7 @@ async function hydrateLink(env: RuntimeEnv, row: LinkRow): Promise<SmartLink | n
     spotify_context_url: row.spotify_context_url || null,
     page_background_style: normalizePageBackgroundStyle(row.page_background_style),
     button_style: normalizeButtonStyle(row.button_style),
+    page_style_options: parsePageStyleOptionsJson(row.page_style_options),
     created_at: row.created_at,
     updated_at: row.updated_at,
     published_at: row.published_at,

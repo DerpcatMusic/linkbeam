@@ -40,6 +40,9 @@
         mode: value("#mode") || "live",
         pageBackgroundStyle: root.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
         buttonStyle: root.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
+        pageStyleOptions: typeof window.collectPageStyleOptions === "function"
+          ? window.collectPageStyleOptions()
+          : undefined,
         destinations
       };
     }
@@ -90,9 +93,30 @@
       }
     }
 
+    function applyPaletteToStyleCards(paletteRaw) {
+      const fields = document.querySelector("[data-page-style-fields]");
+      if (!fields || !paletteRaw) return;
+      try {
+        const parsed = typeof paletteRaw === "string" ? JSON.parse(paletteRaw) : paletteRaw;
+        const identity = parsed.visualIdentity || parsed;
+        const tint = identity.backgroundTintedBase || identity.backgroundBase;
+        const accent = identity.textBrightAccent || tint;
+        const muted = identity.textSubdued;
+        if (tint) {
+          fields.style.setProperty("--card-tint", `rgb(${tint.red} ${tint.green} ${tint.blue})`);
+          fields.style.setProperty("--card-bg", `rgb(${Math.max(0, tint.red - 30)} ${Math.max(0, tint.green - 30)} ${Math.max(0, tint.blue - 30)})`);
+        }
+        if (accent) fields.style.setProperty("--card-primary", `rgb(${accent.red} ${accent.green} ${accent.blue})`);
+        if (muted) fields.style.setProperty("--card-muted", `rgb(${muted.red} ${muted.green} ${muted.blue})`);
+      } catch {
+        // Keep existing card colors if palette JSON is incomplete.
+      }
+    }
+
     window.updateLinkEditorPreview = function updateLinkEditorPreview(patch = {}) {
       if (patch.palette !== undefined && paletteInput) paletteInput.value = patch.palette;
       if (patch.artworkUrl !== undefined && artworkInput) artworkInput.value = patch.artworkUrl;
+      if (patch.palette !== undefined) applyPaletteToStyleCards(patch.palette);
       schedulePreview();
     };
 

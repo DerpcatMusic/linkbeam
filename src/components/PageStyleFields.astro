@@ -11,18 +11,42 @@ import {
   type ButtonStyle,
   type PageBackgroundStyle
 } from "@lib/page-style";
-
-const asciiCardPreview = asciiPatternDataUri(STYLE_CARD_PREVIEW_PALETTE);
+import {
+  DEFAULT_PAGE_STYLE_OPTIONS,
+  normalizePageStyleOptions,
+  type PageStyleOptions
+} from "@lib/page-style-options";
+import { parseTrackPalette, type TrackPaletteVars } from "@lib/palette";
 
 interface Props {
   backgroundStyle: PageBackgroundStyle;
   buttonStyle: ButtonStyle;
+  pageStyleOptions?: PageStyleOptions | null;
+  paletteJson?: string | null;
 }
 
-const { backgroundStyle, buttonStyle } = Astro.props;
+const { backgroundStyle, buttonStyle, pageStyleOptions = null, paletteJson = null } = Astro.props;
+const options = normalizePageStyleOptions(pageStyleOptions ?? DEFAULT_PAGE_STYLE_OPTIONS);
+const parsed = parseTrackPalette(paletteJson);
+const cardPalette: TrackPaletteVars = {
+  "--page-tint": parsed["--page-tint"] ?? STYLE_CARD_PREVIEW_PALETTE["--page-tint"]!,
+  "--primary": parsed["--primary"] ?? STYLE_CARD_PREVIEW_PALETTE["--primary"]!,
+  "--muted": parsed["--muted"] ?? STYLE_CARD_PREVIEW_PALETTE["--muted"]!,
+  "--background": parsed["--background"] ?? "oklch(0.14 0.02 280)",
+  "--surface": parsed["--surface"] ?? "oklch(0.18 0.02 280)"
+};
+const asciiCardPreview = asciiPatternDataUri(cardPalette, options.ascii.density, options.ascii.contrast);
+const cardStyle = [
+  `--card-tint: ${cardPalette["--page-tint"]}`,
+  `--card-primary: ${cardPalette["--primary"]}`,
+  `--card-muted: ${cardPalette["--muted"]}`,
+  `--card-bg: ${cardPalette["--background"]}`,
+  `--card-surface: ${cardPalette["--surface"]}`,
+  `--ascii-card-preview: ${asciiCardPreview}`
+].join("; ");
 ---
 
-<section class="form-block">
+<section class="form-block" style={cardStyle} data-page-style-fields>
   <div class="block-head">
     <h2 class="section-title">Page appearance</h2>
     <p class="block-copy">Background and platform button styles fans see on the public link.</p>
@@ -38,12 +62,9 @@ const { backgroundStyle, buttonStyle } = Astro.props;
               name="pageBackgroundStyle"
               value={style}
               checked={backgroundStyle === style}
+              data-style-radio="background"
             />
-            <span
-              class="style-card__preview"
-              aria-hidden="true"
-              style={style === "ascii" ? `--ascii-card-preview: ${asciiCardPreview}` : undefined}
-            ></span>
+            <span class="style-card__preview" aria-hidden="true"></span>
             <span class="style-card__copy">
               <span class="style-card__label">{pageBackgroundLabels[style]}</span>
               <span class="style-card__hint">{pageBackgroundDescriptions[style]}</span>
@@ -52,6 +73,84 @@ const { backgroundStyle, buttonStyle } = Astro.props;
         ))}
       </div>
     </fieldset>
+
+    <div class="style-knobs" data-style-knobs>
+      <div class="style-knobs__panel" data-knob-panel="blur" hidden={backgroundStyle !== "blur"}>
+        <p class="style-knobs__title">Blur controls</p>
+        <label class="knob">
+          <span>Intensity <output data-knob-output="blur.intensity">{options.blur.intensity.toFixed(2)}</output></span>
+          <input type="range" name="style.blur.intensity" min="0.4" max="1.6" step="0.05" value={options.blur.intensity} data-knob="blur.intensity" />
+        </label>
+        <label class="knob">
+          <span>Saturation <output data-knob-output="blur.saturate">{options.blur.saturate.toFixed(2)}</output></span>
+          <input type="range" name="style.blur.saturate" min="0.5" max="1.8" step="0.05" value={options.blur.saturate} data-knob="blur.saturate" />
+        </label>
+      </div>
+
+      <div class="style-knobs__panel" data-knob-panel="ascii" hidden={backgroundStyle !== "ascii"}>
+        <p class="style-knobs__title">ASCII controls</p>
+        <label class="knob">
+          <span>Density</span>
+          <select name="style.ascii.density" data-knob="ascii.density">
+            <option value="sm" selected={options.ascii.density === "sm"}>Coarse</option>
+            <option value="md" selected={options.ascii.density === "md"}>Balanced</option>
+            <option value="lg" selected={options.ascii.density === "lg"}>Fine</option>
+          </select>
+        </label>
+        <label class="knob">
+          <span>Contrast <output data-knob-output="ascii.contrast">{options.ascii.contrast.toFixed(2)}</output></span>
+          <input type="range" name="style.ascii.contrast" min="0.3" max="1.2" step="0.05" value={options.ascii.contrast} data-knob="ascii.contrast" />
+        </label>
+        <label class="knob">
+          <span>Motion</span>
+          <select name="style.ascii.motion" data-knob="ascii.motion">
+            <option value="static" selected={options.ascii.motion === "static"}>Static</option>
+            <option value="shimmer" selected={options.ascii.motion === "shimmer"}>Shimmer</option>
+            <option value="live" selected={options.ascii.motion === "live"}>Live</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="style-knobs__panel" data-knob-panel="mesh" hidden={backgroundStyle !== "mesh"}>
+        <p class="style-knobs__title">Mesh controls</p>
+        <label class="knob">
+          <span>Speed <output data-knob-output="mesh.speed">{options.mesh.speed.toFixed(2)}</output></span>
+          <input type="range" name="style.mesh.speed" min="0.35" max="2" step="0.05" value={options.mesh.speed} data-knob="mesh.speed" />
+        </label>
+        <label class="knob">
+          <span>Intensity <output data-knob-output="mesh.intensity">{options.mesh.intensity.toFixed(2)}</output></span>
+          <input type="range" name="style.mesh.intensity" min="0.35" max="1.6" step="0.05" value={options.mesh.intensity} data-knob="mesh.intensity" />
+        </label>
+      </div>
+
+      <div class="style-knobs__panel" data-knob-panel="aurora" hidden={backgroundStyle !== "aurora"}>
+        <p class="style-knobs__title">Aurora controls</p>
+        <label class="knob">
+          <span>Speed <output data-knob-output="aurora.speed">{options.aurora.speed.toFixed(2)}</output></span>
+          <input type="range" name="style.aurora.speed" min="0.35" max="2" step="0.05" value={options.aurora.speed} data-knob="aurora.speed" />
+        </label>
+        <label class="knob">
+          <span>Intensity <output data-knob-output="aurora.intensity">{options.aurora.intensity.toFixed(2)}</output></span>
+          <input type="range" name="style.aurora.intensity" min="0.35" max="1.6" step="0.05" value={options.aurora.intensity} data-knob="aurora.intensity" />
+        </label>
+        <label class="knob">
+          <span>Softness <output data-knob-output="aurora.blur">{options.aurora.blur.toFixed(2)}</output></span>
+          <input type="range" name="style.aurora.blur" min="0.5" max="1.8" step="0.05" value={options.aurora.blur} data-knob="aurora.blur" />
+        </label>
+      </div>
+
+      <div class="style-knobs__panel" data-knob-panel="vinyl" hidden={backgroundStyle !== "vinyl"}>
+        <p class="style-knobs__title">Vinyl controls</p>
+        <label class="knob">
+          <span>Spin speed <output data-knob-output="vinyl.speed">{options.vinyl.speed.toFixed(2)}</output></span>
+          <input type="range" name="style.vinyl.speed" min="0.35" max="2" step="0.05" value={options.vinyl.speed} data-knob="vinyl.speed" />
+        </label>
+        <label class="knob">
+          <span>Groove contrast <output data-knob-output="vinyl.intensity">{options.vinyl.intensity.toFixed(2)}</output></span>
+          <input type="range" name="style.vinyl.intensity" min="0.35" max="1.6" step="0.05" value={options.vinyl.intensity} data-knob="vinyl.intensity" />
+        </label>
+      </div>
+    </div>
 
     <fieldset class="style-fieldset">
       <legend>Platform buttons</legend>
@@ -78,6 +177,75 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     </fieldset>
   </div>
 </section>
+
+<script is:inline>
+  (function initPageStyleKnobs() {
+    const root = document.querySelector("[data-page-style-fields]");
+    if (!root) return;
+
+    function selectedBackground() {
+      return root.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur";
+    }
+
+    function syncPanels() {
+      const style = selectedBackground();
+      for (const panel of root.querySelectorAll("[data-knob-panel]")) {
+        panel.hidden = panel.getAttribute("data-knob-panel") !== style;
+      }
+    }
+
+    function syncOutputs(input) {
+      const key = input.getAttribute("data-knob");
+      if (!key) return;
+      const output = root.querySelector(`[data-knob-output="${key}"]`);
+      if (!output) return;
+      const n = Number(input.value);
+      output.textContent = Number.isFinite(n) ? n.toFixed(2) : input.value;
+    }
+
+    for (const input of root.querySelectorAll("input[data-style-radio='background']")) {
+      input.addEventListener("change", syncPanels);
+    }
+    for (const input of root.querySelectorAll("[data-knob]")) {
+      input.addEventListener("input", () => syncOutputs(input));
+      syncOutputs(input);
+    }
+    syncPanels();
+
+    window.collectPageStyleOptions = function collectPageStyleOptions() {
+      const num = (name, fallback) => {
+        const el = root.querySelector(`[data-knob="${name}"]`);
+        const n = Number(el?.value);
+        return Number.isFinite(n) ? n : fallback;
+      };
+      const str = (name, fallback) => root.querySelector(`[data-knob="${name}"]`)?.value || fallback;
+      return {
+        blur: {
+          intensity: num("blur.intensity", 1),
+          saturate: num("blur.saturate", 1)
+        },
+        ascii: {
+          density: str("ascii.density", "md"),
+          contrast: num("ascii.contrast", 0.7),
+          motion: str("ascii.motion", "live")
+        },
+        mesh: {
+          speed: num("mesh.speed", 1),
+          intensity: num("mesh.intensity", 1)
+        },
+        aurora: {
+          speed: num("aurora.speed", 1),
+          intensity: num("aurora.intensity", 1),
+          blur: num("aurora.blur", 1)
+        },
+        vinyl: {
+          speed: num("vinyl.speed", 1),
+          intensity: num("vinyl.intensity", 1)
+        }
+      };
+    };
+  })();
+</script>
 
 <style>
   .appearance-body {
@@ -162,33 +330,25 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     background: oklch(0.28 0.006 265 / 0.8);
   }
 
-  .btn-swatch--spotify {
-    background: oklch(0.28 0.006 265 / 0.8);
-  }
-
-  .btn-swatch--apple {
-    background: oklch(0.28 0.006 265 / 0.55);
-  }
-
   .style-card--bg-blur .style-card__preview {
     background:
-      radial-gradient(circle at 30% 20%, oklch(0.55 0.14 320 / 0.75), transparent 58%),
-      radial-gradient(circle at 72% 78%, oklch(0.42 0.1 250 / 0.65), transparent 55%),
-      oklch(0.18 0.02 280);
+      radial-gradient(circle at 30% 20%, color-mix(in oklch, var(--card-primary) 75%, transparent), transparent 58%),
+      radial-gradient(circle at 72% 78%, color-mix(in oklch, var(--card-tint) 65%, transparent), transparent 55%),
+      var(--card-bg);
     filter: blur(0.4px);
   }
 
   .style-card--bg-ascii .style-card__preview {
     background-image: var(--ascii-card-preview);
     background-size: cover;
-    background-color: oklch(0.14 0.02 285);
+    background-color: var(--card-bg);
     image-rendering: pixelated;
   }
 
   .style-card--bg-mesh .style-card__preview {
     position: relative;
     overflow: hidden;
-    background: oklch(0.12 0.02 280);
+    background: var(--card-bg);
   }
 
   .style-card--bg-mesh .style-card__preview::before,
@@ -206,7 +366,7 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     height: 70%;
     top: -18%;
     left: -8%;
-    background: radial-gradient(circle, oklch(0.62 0.16 330 / 0.95), transparent 58%);
+    background: radial-gradient(circle, color-mix(in oklch, var(--card-primary) 90%, transparent), transparent 58%);
   }
 
   .style-card--bg-mesh .style-card__preview::after {
@@ -214,13 +374,13 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     height: 65%;
     bottom: -22%;
     right: -12%;
-    background: radial-gradient(circle, oklch(0.52 0.12 250 / 0.85), transparent 56%);
+    background: radial-gradient(circle, color-mix(in oklch, var(--card-tint) 85%, transparent), transparent 56%);
   }
 
   .style-card--bg-aurora .style-card__preview {
     position: relative;
     overflow: hidden;
-    background: oklch(0.11 0.02 265);
+    background: var(--card-bg);
   }
 
   .style-card--bg-aurora .style-card__preview::before,
@@ -238,11 +398,11 @@ const { backgroundStyle, buttonStyle } = Astro.props;
   }
 
   .style-card--bg-aurora .style-card__preview::before {
-    background: radial-gradient(ellipse 80% 50% at 40% 20%, oklch(0.58 0.18 300 / 0.9), transparent 62%);
+    background: radial-gradient(ellipse 80% 50% at 40% 20%, color-mix(in oklch, var(--card-primary) 90%, transparent), transparent 62%);
   }
 
   .style-card--bg-aurora .style-card__preview::after {
-    background: radial-gradient(ellipse 70% 45% at 68% 55%, oklch(0.55 0.15 200 / 0.75), transparent 60%);
+    background: radial-gradient(ellipse 70% 45% at 68% 55%, color-mix(in oklch, var(--card-tint) 80%, transparent), transparent 60%);
     top: -20%;
     left: 10%;
   }
@@ -251,7 +411,7 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     position: relative;
     display: grid;
     place-items: center;
-    background: oklch(0.12 0.02 280);
+    background: var(--card-bg);
     overflow: hidden;
   }
 
@@ -264,9 +424,9 @@ const { backgroundStyle, buttonStyle } = Astro.props;
       repeating-radial-gradient(
         circle at center,
         transparent 0 2px,
-        oklch(0.42 0.04 280 / 0.28) 2px 3px
+        color-mix(in oklch, var(--card-muted) 35%, transparent) 2px 3px
       ),
-      radial-gradient(circle, oklch(0.42 0.1 300 / 0.55), oklch(0.14 0.02 280) 72%);
+      radial-gradient(circle, color-mix(in oklch, var(--card-tint) 70%, var(--card-primary)), var(--card-bg) 72%);
     box-shadow: 0 0 0 1px oklch(1 0 0 / 0.06) inset;
   }
 
@@ -332,5 +492,63 @@ const { backgroundStyle, buttonStyle } = Astro.props;
     font-size: var(--text-xs);
     line-height: 1.35;
     color: var(--muted);
+  }
+
+  .style-knobs {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in oklch, var(--surface) 88%, var(--background));
+    padding: 0.85rem 0.95rem;
+  }
+
+  .style-knobs__panel[hidden] {
+    display: none;
+  }
+
+  .style-knobs__title {
+    margin: 0 0 0.65rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .knob {
+    display: grid;
+    gap: 0.3rem;
+    margin-bottom: 0.65rem;
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+
+  .knob:last-child {
+    margin-bottom: 0;
+  }
+
+  .knob span {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .knob output {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .knob input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .knob select {
+    width: 100%;
+    min-height: 2.25rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--foreground);
+    padding: 0.35rem 0.55rem;
   }
 </style>

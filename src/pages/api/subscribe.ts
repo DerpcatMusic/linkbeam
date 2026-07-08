@@ -21,8 +21,9 @@ export const POST: APIRoute = async (context) => {
     if (!link) return notFound();
 
     const result = await subscribeEmail(env, body.linkId, body.email);
+    let eventId: string | undefined;
     if (result.created && !isBot(context.request)) {
-      const eventId = createEventId("subscribe", link);
+      eventId = createEventId("subscribe", link);
       const trackingCookies = resolveTrackingCookies(context.request);
       defer(context, queueMetaEvent(env, context.request, link, {
         kind: "subscribe",
@@ -35,7 +36,7 @@ export const POST: APIRoute = async (context) => {
       defer(context, recordMetricEvent(env, { linkId: link.id, kind: "subscribe", request: context.request, cookies: trackingCookies }));
     }
 
-    return json({ ok: true, created: result.created });
+    return json({ ok: true, created: result.created, eventId });
   } catch (error) {
     if (error instanceof Response) return error;
     return badRequest(error instanceof Error ? error.message : "Subscribe failed.");

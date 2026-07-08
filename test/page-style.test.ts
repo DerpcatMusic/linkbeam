@@ -70,4 +70,19 @@ describe("asciiPatternDataUri", () => {
     expect(decoded).toContain("<text");
     expect(decoded).toContain("font-weight=\"700\"");
   });
+
+  it("honors density for tile dimensions", () => {
+    const coarse = asciiPatternDataUri({
+      "--page-tint": "rgb(78 30 79)",
+      "--primary": "rgb(255 255 255)",
+      "--muted": "rgb(200 180 200)"
+    }, "sm");
+    const balanced = asciiPatternDataUri({
+      "--page-tint": "rgb(78 30 79)",
+      "--primary": "rgb(255 255 255)",
+      "--muted": "rgb(200 180 200)"
+    }, "md");
+    expect(decodeURIComponent(coarse)).toContain('width="432"');
+    expect(decodeURIComponent(balanced)).toContain('width="648"');
+  });
 });

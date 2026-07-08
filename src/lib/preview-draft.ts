@@ -1,5 +1,10 @@
 import { presaveDestinationLabel } from "@lib/effective-mode";
 import { normalizeButtonStyle, normalizePageBackgroundStyle } from "@lib/page-style";
+import {
+  DEFAULT_PAGE_STYLE_OPTIONS,
+  normalizePageStyleOptions,
+  type PageStyleOptions
+} from "@lib/page-style-options";
 import { platformLabels, type LinkMode, type Platform } from "@lib/types";
 import { z } from "zod";
 
@@ -25,6 +30,7 @@ export const previewDraftSchema = z.object({
   mode: z.enum(["live", "presave"]).optional(),
   pageBackgroundStyle: z.string().optional(),
   buttonStyle: z.string().optional(),
+  pageStyleOptions: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
   destinations: z.partialRecord(platformSchema, z.string()).optional()
 });
 
@@ -46,7 +52,20 @@ export interface ResolvedPreviewDraft {
   effectiveMode: LinkMode;
   pageBackgroundStyle: ReturnType<typeof normalizePageBackgroundStyle>;
   buttonStyle: ReturnType<typeof normalizeButtonStyle>;
+  pageStyleOptions: PageStyleOptions;
   destinations: PreviewDestination[];
+}
+
+function normalizeDraftStyleOptions(raw: PreviewDraft["pageStyleOptions"]): PageStyleOptions {
+  if (!raw) return normalizePageStyleOptions(DEFAULT_PAGE_STYLE_OPTIONS);
+  if (typeof raw === "string") {
+    try {
+      return normalizePageStyleOptions(JSON.parse(raw));
+    } catch {
+      return normalizePageStyleOptions(DEFAULT_PAGE_STYLE_OPTIONS);
+    }
+  }
+  return normalizePageStyleOptions(raw);
 }
 
 export function normalizePaletteJson(palette: PreviewDraft["palette"]): string | null {
@@ -94,6 +113,7 @@ export function resolvePreviewDraft(draft: PreviewDraft): ResolvedPreviewDraft {
     effectiveMode,
     pageBackgroundStyle: normalizePageBackgroundStyle(draft.pageBackgroundStyle),
     buttonStyle: normalizeButtonStyle(draft.buttonStyle),
+    pageStyleOptions: normalizeDraftStyleOptions(draft.pageStyleOptions),
     destinations
   };
 }
@@ -120,6 +140,7 @@ export async function readPreviewDraft(request: Request): Promise<PreviewDraft> 
     mode: form.get("mode"),
     pageBackgroundStyle: form.get("pageBackgroundStyle"),
     buttonStyle: form.get("buttonStyle"),
+    pageStyleOptions: form.get("pageStyleOptions") || undefined,
     destinations
   });
 }

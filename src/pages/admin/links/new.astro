@@ -82,6 +82,7 @@ if (blocked) return blocked;
     <PageStyleFields
       backgroundStyle={DEFAULT_PAGE_BACKGROUND_STYLE}
       buttonStyle={DEFAULT_BUTTON_STYLE}
+      paletteJson={null}
     />
 
     <div class="actions">
@@ -245,6 +246,9 @@ if (blocked) return blocked;
       mode: value("#mode"),
       pageBackgroundStyle: form.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
       buttonStyle: form.querySelector("input[name='buttonStyle']:checked")?.value || "monochrome",
+      pageStyleOptions: typeof window.collectPageStyleOptions === "function"
+        ? window.collectPageStyleOptions()
+        : undefined,
       destinations,
       releaseAt: fromDatetimeLocal(value("#releaseAt"))
     };

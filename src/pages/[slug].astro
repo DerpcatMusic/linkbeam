@@ -92,6 +92,7 @@ const artworkPath = artworkPublicPath(link.track);
 const artwork = artworkPath.startsWith("http") ? artworkPath : `${baseUrl}${artworkPath}`;
 const pageBackgroundStyle = link.page_background_style;
 const buttonStyle = link.button_style;
+const pageStyleOptions = link.page_style_options;
 const isPresave = effectiveMode === "presave";
 const pixelScript = trackTracking
   ? buildPixelScript({ pixelId, pageViewEventId, externalId: hashedExternalId })
@@ -194,6 +195,7 @@ const fanDestinations = destinationRows.map((row) => ({
     effectiveMode={effectiveMode}
     pageBackgroundStyle={pageBackgroundStyle}
     buttonStyle={buttonStyle}
+    pageStyleOptions={pageStyleOptions}
     destinations={fanDestinations}
     embedded={embedded}
     showDraftRibbon={isDraftPreview}
@@ -302,6 +304,9 @@ const fanDestinations = destinationRows.map((row) => ({
           body: JSON.stringify({ linkId, email })
         });
         const data = await response.json().catch(() => ({}));
+        if (response.ok && data.created && data.eventId && typeof window.fbq === "function") {
+          fbq("track", "CompleteRegistration", {}, { eventID: data.eventId, em: email });
+        }
         if (status) {
           status.textContent = response.ok
             ? "You're on the list."

@@ -44,6 +44,13 @@ function baseLink(overrides: Partial<SmartLink> = {}): SmartLink {
     spotify_context_url: null,
     page_background_style: "blur",
     button_style: "monochrome",
+    page_style_options: {
+      blur: { intensity: 1, saturate: 1 },
+      ascii: { density: "md", contrast: 0.7, motion: "live" },
+      mesh: { speed: 1, intensity: 1 },
+      aurora: { speed: 1, intensity: 1, blur: 1 },
+      vinyl: { speed: 1, intensity: 1 }
+    },
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     published_at: "2026-01-01T00:00:00Z",

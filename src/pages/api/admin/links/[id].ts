@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { deleteLink, getLinkById, updateLink } from "@lib/db";
 import { badRequest, json, notFound, readJson } from "@lib/http";
+import { normalizePageStyleOptions } from "@lib/page-style-options";
 import { getRuntimeEnv, requireAdmin } from "@lib/runtime";
 import { linkBodySchema } from "@lib/validation";
 
@@ -27,7 +28,10 @@ export const PATCH: APIRoute = async (context) => {
       status: body.status,
       releaseAt: body.releaseAt,
       pageBackgroundStyle: body.pageBackgroundStyle,
-      buttonStyle: body.buttonStyle
+      buttonStyle: body.buttonStyle,
+      pageStyleOptions: body.pageStyleOptions
+        ? normalizePageStyleOptions(body.pageStyleOptions)
+        : undefined
     });
     return json({ link });
   } catch (error) {
