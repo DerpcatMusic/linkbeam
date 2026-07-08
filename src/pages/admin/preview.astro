@@ -25,7 +25,7 @@ const destinationRows = draft.destinations.map((row) => ({
 <LinkLayout
   title={`${draft.title} — ${draft.artistName}`}
   description="Link editor preview"
-  bodyClass="beamlink-link--embedded"
+  bodyClass="beamlink-link--preview-pane"
 >
   <SmartlinkFanPage
     title={draft.title}
@@ -38,7 +38,7 @@ const destinationRows = draft.destinations.map((row) => ({
     pageBackgroundStyle={draft.pageBackgroundStyle}
     buttonStyle={draft.buttonStyle}
     destinations={destinationRows}
-    embedded
+    previewPane
     showDraftRibbon
     interactive={false}
   />

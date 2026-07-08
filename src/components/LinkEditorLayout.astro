@@ -20,29 +20,31 @@ const {
 } = Astro.props;
 ---
 
-<AppLayout title={title} fullWidth={fullWidth}>
+<AppLayout title={title} fullWidth={fullWidth} bodyClass="link-editor-page">
   <main class="link-editor">
-    <slot name="top" />
-
-    {showHeader && (
-      <header class="link-editor__header">
-        <div>
-          {backHref && (
-            <a class="back" href={backHref}>
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-6 6 6 6" /></svg>
-              {backLabel}
-            </a>
-          )}
-          <h1>{title}</h1>
-          {lede && <p class="lede">{lede}</p>}
-        </div>
-        <slot name="header-actions" />
-      </header>
-    )}
-
     <div class="link-editor__split">
       <div class="link-editor__form">
-        <slot />
+        <div class="link-editor__form-inner">
+          <slot name="top" />
+
+          {showHeader && (
+            <header class="link-editor__header">
+              <div>
+                {backHref && (
+                  <a class="back" href={backHref}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-6 6 6 6" /></svg>
+                    {backLabel}
+                  </a>
+                )}
+                <h1>{title}</h1>
+                {lede && <p class="lede">{lede}</p>}
+              </div>
+              <slot name="header-actions" />
+            </header>
+          )}
+
+          <slot />
+        </div>
       </div>
 
       <aside class="link-editor__preview" aria-label="Live preview">
@@ -65,15 +67,63 @@ const {
   <slot name="scripts" />
 </AppLayout>
 
+<style is:global>
+  body.link-editor-page .beamlink-admin {
+    width: 100%;
+    max-width: none;
+  }
+</style>
+
 <style>
   .link-editor {
+    width: 100%;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+
+  .link-editor__split {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    width: 100%;
+    min-height: 100dvh;
+    height: 100dvh;
+  }
+
+  .link-editor__form {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--border-strong);
+    background: var(--background);
+  }
+
+  .link-editor__form-inner {
     display: grid;
     gap: 0.75rem;
-    width: calc(100% - clamp(1.25rem, 3vw, 2rem));
+    align-content: start;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1rem clamp(1rem, 2.5vw, 2rem) 2rem;
+    scrollbar-gutter: stable;
+  }
+
+  .link-editor__form-inner :global(.form-block) {
+    grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr);
+    gap: 0.45rem 1.25rem;
+    padding-block: 1rem;
+  }
+
+  .link-editor__form-inner :global(.form-block .block-copy) {
     max-width: none;
-    margin-inline: auto;
-    padding-block: 0.85rem 1.25rem;
-    min-height: calc(100dvh - 2.5rem);
+  }
+
+  .link-editor__form-inner :global(.style-grid) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .link-editor__form-inner :global(.style-grid--buttons) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .link-editor__header {
@@ -114,55 +164,15 @@ const {
     color: var(--foreground);
   }
 
-  .link-editor__split {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(0.85rem, 2vw, 1.35rem);
-    align-items: stretch;
-    min-height: calc(100dvh - 7rem);
-    flex: 1;
-  }
-
-  .link-editor__form {
-    display: grid;
-    gap: 0;
-    align-content: start;
-    min-width: 0;
-    min-height: 0;
-    max-height: calc(100dvh - 6.5rem);
-    overflow: auto;
-    padding-right: 0.2rem;
-    scrollbar-gutter: stable;
-  }
-
-  .link-editor__form :global(.form-block) {
-    grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr);
-    gap: 0.45rem 1.25rem;
-    padding-block: 1rem;
-  }
-
-  .link-editor__form :global(.form-block .block-copy) {
-    max-width: none;
-  }
-
-  .link-editor__form :global(.style-grid) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .link-editor__form :global(.style-grid--buttons) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .link-editor__preview {
-    position: sticky;
-    top: 0.5rem;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    gap: 0.5rem;
+    gap: 0.55rem;
     min-width: 0;
     min-height: 0;
-    height: calc(100dvh - 6.5rem);
-    max-height: calc(100dvh - 6.5rem);
+    height: 100%;
+    padding: 1rem clamp(0.75rem, 1.5vw, 1.25rem) 1rem clamp(0.5rem, 1vw, 1rem);
+    background: oklch(0.11 0.008 265);
   }
 
   .preview-chrome {
@@ -170,7 +180,7 @@ const {
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    padding-inline: 0.1rem;
+    padding-inline: 0.15rem;
   }
 
   .preview-label {
@@ -191,7 +201,7 @@ const {
     height: 100%;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-lg);
-    background: oklch(0.1 0.008 265);
+    background: var(--background);
     overflow: hidden;
   }
 
@@ -204,47 +214,44 @@ const {
   }
 
   @media (max-width: 1100px) {
-    .link-editor__form :global(.style-grid),
-    .link-editor__form :global(.style-grid--buttons) {
+    .link-editor__form-inner :global(.style-grid),
+    .link-editor__form-inner :global(.style-grid--buttons) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 980px) {
+  @media (max-width: 900px) {
     .link-editor__split {
       grid-template-columns: 1fr;
-      min-height: 0;
+      grid-template-rows: auto minmax(24rem, 50vh);
+      height: auto;
+      min-height: 100dvh;
     }
 
     .link-editor__form {
+      border-right: 0;
+      border-bottom: 1px solid var(--border-strong);
       max-height: none;
+    }
+
+    .link-editor__form-inner {
+      height: auto;
       overflow: visible;
-      padding-right: 0;
     }
 
     .link-editor__preview {
-      position: static;
-      height: min(40rem, 72vh);
-      max-height: min(40rem, 72vh);
-      order: 2;
-    }
-
-    .preview-frame-wrap {
-      min-height: 22rem;
+      height: min(50vh, 36rem);
+      min-height: 24rem;
     }
   }
 
   @media (max-width: 720px) {
-    .link-editor {
-      width: calc(100% - 1.25rem);
-    }
-
-    .link-editor__form :global(.form-block) {
+    .link-editor__form-inner :global(.form-block) {
       grid-template-columns: 1fr;
     }
 
-    .link-editor__form :global(.style-grid),
-    .link-editor__form :global(.style-grid--buttons) {
+    .link-editor__form-inner :global(.style-grid),
+    .link-editor__form-inner :global(.style-grid--buttons) {
       grid-template-columns: 1fr;
     }
   }
