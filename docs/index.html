@@ -3,113 +3,1090 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Beamlink</title>
+    <title>Beamlink — one fast link for your music release</title>
     <meta
       name="description"
-      content="Open-source, self-hosted music smartlinks and presaves on Cloudflare Workers."
+      content="Open-source, self-hosted music smartlinks and presaves with first-party Meta CAPI, built for Cloudflare Workers."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Beamlink — one fast link for your music release" />
+    <meta
+      property="og:description"
+      content="Fast open-source music smartlinks, presaves, and first-party Meta CAPI on your own Cloudflare account."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Beamlink — one fast link for your music release" />
+    <meta
+      name="twitter:description"
+      content="Fast open-source music smartlinks, presaves, and first-party Meta CAPI on your own Cloudflare account."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
     />
     <style>
       :root {
         color-scheme: dark;
-        --bg: #060608;
-        --ink: #f4f5f7;
-        --muted: #a4a8b5;
-        --line: rgba(255, 255, 255, 0.12);
-        --beam: #6d9cff;
+        --m-bg: #060608;
+        --m-bg-2: #0a0a0d;
+        --m-ink: #f4f5f7;
+        --m-ink-2: #c8cad2;
+        --m-muted: #9398a6;
+        --m-faint: #565a68;
+        --m-surface: rgba(255, 255, 255, 0.024);
+        --m-surface-2: rgba(255, 255, 255, 0.05);
+        --m-inset: #0c0c10;
+        --m-border: rgba(255, 255, 255, 0.09);
+        --m-border-strong: rgba(255, 255, 255, 0.16);
+        --m-beam: oklch(0.68 0.17 258);
+        --m-beam-ink: oklch(0.82 0.13 258);
+        --m-beam-soft: oklch(0.68 0.17 258 / 0.16);
+        --m-beam-glow: oklch(0.7 0.19 258 / 0.5);
+        --m-radius: 10px;
+        --m-radius-lg: 18px;
+        --m-font: "Figtree", ui-sans-serif, system-ui, sans-serif;
+        --m-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --m-max: 72rem;
+        --m-gutter: clamp(1.25rem, 5vw, 2.5rem);
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html {
+        scroll-behavior: smooth;
+        background: var(--m-bg);
+      }
+
       body {
         margin: 0;
         min-height: 100dvh;
-        display: grid;
-        place-items: center;
-        background:
-          radial-gradient(circle at 70% 20%, rgba(109, 156, 255, 0.2), transparent 32rem),
-          linear-gradient(180deg, #08090d, var(--bg));
-        color: var(--ink);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-
-      main {
-        width: min(46rem, calc(100% - 2rem));
-        padding-block: 5rem;
-      }
-
-      .mark {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.65rem;
-        color: var(--muted);
-        font-weight: 600;
-      }
-
-      .dot {
-        width: 0.9rem;
-        height: 0.9rem;
-        border-radius: 0.25rem;
-        background: linear-gradient(150deg, #a8c4ff, var(--beam));
-        box-shadow: 0 0 22px rgba(109, 156, 255, 0.7);
-      }
-
-      h1 {
-        margin: 1.5rem 0 1rem;
-        max-width: 11ch;
-        font-size: clamp(3rem, 10vw, 6.5rem);
-        line-height: 0.95;
-        letter-spacing: 0;
-      }
-
-      p {
-        margin: 0;
-        max-width: 38rem;
-        color: var(--muted);
-        font-size: clamp(1.05rem, 2vw, 1.25rem);
+        background: var(--m-bg);
+        color: var(--m-ink);
+        font-family: var(--m-font);
+        font-size: 1rem;
         line-height: 1.6;
-      }
-
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 2rem;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: clip;
       }
 
       a {
-        min-height: 2.75rem;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 2px solid var(--m-beam-ink);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      .marketing {
+        position: relative;
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
+      .m-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .m-aurora {
+        position: absolute;
+        inset: -14% 0;
+        filter: blur(70px) saturate(1.25);
+        opacity: 0.85;
+      }
+
+      .m-aurora-blob {
+        position: absolute;
+        border-radius: 50%;
+        mix-blend-mode: screen;
+      }
+
+      .m-aurora-blob--1 {
+        top: -6%;
+        left: 4%;
+        width: 42rem;
+        height: 42rem;
+        background: radial-gradient(circle at 50% 50%, oklch(0.62 0.17 258 / 0.5), transparent 66%);
+        animation: m-drift-1 26s ease-in-out infinite;
+      }
+
+      .m-aurora-blob--2 {
+        top: 26%;
+        right: -6%;
+        width: 40rem;
+        height: 40rem;
+        background: radial-gradient(circle at 50% 50%, oklch(0.6 0.13 224 / 0.42), transparent 64%);
+        animation: m-drift-2 32s ease-in-out infinite;
+      }
+
+      .m-aurora-blob--3 {
+        top: 58%;
+        left: -8%;
+        width: 44rem;
+        height: 40rem;
+        background: radial-gradient(circle at 50% 50%, oklch(0.52 0.16 266 / 0.4), transparent 68%);
+        animation: m-drift-3 38s ease-in-out infinite;
+      }
+
+      .m-aurora-blob--4 {
+        top: 82%;
+        right: 6%;
+        width: 38rem;
+        height: 38rem;
+        background: radial-gradient(circle at 50% 50%, oklch(0.58 0.15 250 / 0.36), transparent 66%);
+        animation: m-drift-1 30s ease-in-out infinite reverse;
+      }
+
+      .m-vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(120% 55% at 50% 42%, transparent 58%, color-mix(in srgb, var(--m-bg) 65%, transparent));
+      }
+
+      @keyframes m-drift-1 {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(6%, 4%, 0) scale(1.12); }
+      }
+
+      @keyframes m-drift-2 {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+        50% { transform: translate3d(-5%, 6%, 0) scale(0.94); }
+      }
+
+      @keyframes m-drift-3 {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(4%, -5%, 0) scale(1.1); }
+      }
+
+      header,
+      main,
+      footer {
+        position: relative;
+        z-index: 1;
+      }
+
+      .m-shell {
+        width: min(var(--m-max), calc(100% - var(--m-gutter) * 2));
+        margin-inline: auto;
+      }
+
+      .m-nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: color-mix(in srgb, var(--m-bg) 72%, transparent);
+        backdrop-filter: blur(16px) saturate(1.2);
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.3s ease, background 0.3s ease;
+      }
+
+      .m-nav.is-scrolled {
+        border-bottom-color: var(--m-border);
+        background: color-mix(in srgb, var(--m-bg) 86%, transparent);
+      }
+
+      .m-nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 4.25rem;
+      }
+
+      .m-logo,
+      .m-footer-brand {
         display: inline-flex;
         align-items: center;
+        gap: 0.6rem;
+        color: var(--m-ink);
+        font-size: 1.02rem;
+        font-weight: 600;
+        letter-spacing: 0;
+      }
+
+      .m-logo-mark {
+        position: relative;
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        background: linear-gradient(150deg, var(--m-beam-ink), var(--m-beam));
+        box-shadow: 0 0 14px var(--m-beam-glow);
+      }
+
+      .m-logo-mark::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -7px;
+        width: 2px;
+        height: 7px;
+        background: linear-gradient(var(--m-beam-ink), transparent);
+        transform: translateX(-50%);
+      }
+
+      .m-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .m-nav-links a:not(.m-btn) {
+        padding: 0.45rem 0.7rem;
+        color: var(--m-muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: color 0.15s ease;
+      }
+
+      .m-nav-links a:not(.m-btn):hover {
+        color: var(--m-ink);
+      }
+
+      .m-btn {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
         justify-content: center;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 0.65rem 1rem;
-        color: var(--ink);
-        text-decoration: none;
+        gap: 0.5rem;
+        border: 1px solid transparent;
+        border-radius: var(--m-radius);
+        padding: 0.5rem 1.1rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+        transition: transform 0.15s var(--ease-out), background 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease;
+      }
+
+      .m-btn svg {
+        width: 1.05em;
+        height: 1.05em;
+      }
+
+      .m-btn-beam {
+        background: var(--m-beam);
+        color: oklch(0.14 0.03 258);
+        box-shadow: 0 0 0 1px var(--m-beam) inset, 0 10px 30px -10px var(--m-beam-glow);
+      }
+
+      .m-btn-beam:hover {
+        transform: translateY(-1px);
+        background: var(--m-beam-ink);
+      }
+
+      .m-btn-secondary {
+        border-color: var(--m-border-strong);
+        background: var(--m-surface);
+        color: var(--m-ink);
+      }
+
+      .m-btn-secondary:hover {
+        background: var(--m-surface-2);
+        transform: translateY(-1px);
+      }
+
+      .m-hero {
+        position: relative;
+        padding-block: clamp(4.5rem, 12vw, 9rem) clamp(4rem, 9vw, 7rem);
+        isolation: isolate;
+        overflow: hidden;
+      }
+
+      .m-hero::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        z-index: -2;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 72%);
+        -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 72%);
+      }
+
+      .m-hero::after {
+        content: "";
+        position: absolute;
+        top: -18%;
+        left: 50%;
+        z-index: -1;
+        width: min(52rem, 90vw);
+        height: 60rem;
+        transform: translateX(-50%);
+        background:
+          radial-gradient(60% 42% at 50% 12%, var(--m-beam-soft), transparent 70%),
+          conic-gradient(from 180deg at 50% 0%, transparent 46%, var(--m-beam-glow) 50%, transparent 54%);
+        filter: blur(28px);
+        opacity: 0.72;
+        pointer-events: none;
+        animation: m-beam-breathe 7s ease-in-out infinite;
+      }
+
+      @keyframes m-beam-breathe {
+        0%, 100% { opacity: 0.55; }
+        50% { opacity: 0.85; }
+      }
+
+      .m-hero-grid {
+        position: relative;
+        display: grid;
+        gap: clamp(3rem, 7vw, 5rem);
+        align-items: center;
+      }
+
+      @media (min-width: 940px) {
+        .m-hero-grid {
+          grid-template-columns: 1.05fr 0.95fr;
+        }
+      }
+
+      .m-hero-copy {
+        max-width: 34rem;
+      }
+
+      .m-announce {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1.75rem;
+        padding: 0.35rem 0.85rem 0.35rem 0.4rem;
+        border: 1px solid var(--m-border);
+        border-radius: 99px;
+        background: var(--m-surface);
+        color: var(--m-ink-2);
+        font-size: 0.82rem;
+      }
+
+      .m-announce-tag {
+        padding: 0.1rem 0.55rem;
+        border-radius: 99px;
+        background: var(--m-beam-soft);
+        color: var(--m-beam-ink);
+        font-family: var(--m-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .m-display {
+        margin: 0;
+        max-width: 11ch;
+        font-size: clamp(2.75rem, 6.2vw, 4.75rem);
+        font-weight: 650;
+        letter-spacing: -0.03em;
+        line-height: 0.98;
+        text-wrap: balance;
+      }
+
+      .m-lede {
+        margin: 1.6rem 0 0;
+        max-width: 36ch;
+        color: var(--m-ink-2);
+        font-size: clamp(1.05rem, 1.8vw, 1.22rem);
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
+
+      .m-hero-actions,
+      .m-cta-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2.25rem;
+      }
+
+      .m-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+        margin-top: 2rem;
+        color: var(--m-muted);
+        font-family: var(--m-mono);
+        font-size: 0.78rem;
+      }
+
+      .m-hero-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .m-hero-meta span::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--m-beam);
+        box-shadow: 0 0 8px var(--m-beam-glow);
+      }
+
+      .m-release-stage {
+        position: relative;
+        justify-self: center;
+        width: 100%;
+        max-width: 25rem;
+      }
+
+      .m-release-stage::before {
+        content: "";
+        position: absolute;
+        inset: 12% 4% -5%;
+        z-index: -1;
+        background: radial-gradient(60% 55% at 50% 42%, oklch(0.6 0.16 258 / 0.34), transparent 72%);
+        filter: blur(42px);
+        opacity: 0.8;
+      }
+
+      .m-live-shell {
+        overflow: hidden;
+        border: 1px solid var(--m-border-strong);
+        border-radius: 18px;
+        background: #0a0a0d;
+        box-shadow: 0 34px 80px -34px rgba(0, 0, 0, 0.95);
+      }
+
+      .m-live-browser {
+        display: flex;
+        align-items: center;
+        gap: 0.42rem;
+        min-height: 2.25rem;
+        padding-inline: 0.8rem;
+        border-bottom: 1px solid var(--m-border);
+        background: color-mix(in srgb, var(--m-bg-2) 90%, white 2%);
+      }
+
+      .m-live-browser span {
+        width: 0.52rem;
+        height: 0.52rem;
+        border-radius: 50%;
+        background: var(--m-faint);
+      }
+
+      .m-live-browser b {
+        min-width: 0;
+        margin-left: 0.45rem;
+        overflow: hidden;
+        color: var(--m-muted);
+        font-family: var(--m-mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .m-live-frame {
+        display: block;
+        width: 100%;
+        height: 40rem;
+        min-height: 0;
+        border: 0;
+        background: #050507;
+      }
+
+      .m-live-open {
+        display: inline-flex;
+        margin-top: 0.9rem;
+        color: var(--m-muted);
+        font-size: 0.88rem;
+        transition: color 0.15s ease;
+      }
+
+      .m-live-open:hover {
+        color: var(--m-ink);
+      }
+
+      .m-section {
+        position: relative;
+        padding-block: clamp(5rem, 11vw, 8rem);
+      }
+
+      .m-section-head {
+        max-width: 44rem;
+        margin-bottom: clamp(2.5rem, 5vw, 4rem);
+      }
+
+      .m-section-head.is-center {
+        margin-inline: auto;
+        text-align: center;
+      }
+
+      .m-h2,
+      .m-cta h2 {
+        margin: 0;
+        font-size: clamp(2rem, 4.2vw, 3.1rem);
+        font-weight: 650;
+        letter-spacing: -0.025em;
+        line-height: 1.05;
+        text-wrap: balance;
+      }
+
+      .m-sub,
+      .m-cta p {
+        margin: 1.1rem 0 0;
+        max-width: 44rem;
+        color: var(--m-ink-2);
+        font-size: clamp(1.02rem, 1.7vw, 1.18rem);
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
+
+      .m-steps {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 820px) {
+        .m-steps {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .m-step {
+        position: relative;
+        padding: 1.75rem;
+        border: 1px solid var(--m-border);
+        border-radius: var(--m-radius-lg);
+        background: var(--m-surface);
+        overflow: hidden;
+      }
+
+      .m-step-line {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: grid;
+        place-items: center;
+        margin-bottom: 1.1rem;
+        border-radius: 10px;
+        background: var(--m-beam-soft);
+        color: var(--m-beam-ink);
+      }
+
+      .m-step-line svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .m-step h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.12rem;
+        font-weight: 650;
+        letter-spacing: 0;
+      }
+
+      .m-step p {
+        margin: 0;
+        color: var(--m-muted);
+        font-size: 0.94rem;
+      }
+
+      .m-compare {
+        border: 1px solid var(--m-border);
+        border-radius: var(--m-radius-lg);
+        background: var(--m-surface);
+        overflow: hidden;
+      }
+
+      .m-compare-head,
+      .m-compare-row {
+        display: grid;
+        grid-template-columns: minmax(9rem, 0.8fr) repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.1rem;
+      }
+
+      .m-compare-head {
+        color: var(--m-muted);
+        font-family: var(--m-mono);
+        font-size: 0.75rem;
+        border-bottom: 1px solid var(--m-border);
+      }
+
+      .m-compare-row + .m-compare-row {
+        border-top: 1px solid var(--m-border);
+      }
+
+      .m-compare-row > span {
+        color: var(--m-ink);
         font-weight: 650;
       }
 
-      a.primary {
-        border-color: transparent;
-        background: var(--beam);
-        color: #08101f;
+      .m-compare-row p {
+        margin: 0;
+        color: var(--m-muted);
+        font-size: 0.93rem;
+      }
+
+      .m-us {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        color: var(--m-ink-2) !important;
+      }
+
+      .m-check {
+        flex: 0 0 auto;
+        margin-top: 0.15rem;
+        color: var(--m-beam-ink);
+      }
+
+      .m-selfhost,
+      .m-docs-grid {
+        display: grid;
+        gap: clamp(2rem, 6vw, 4rem);
+        align-items: start;
+      }
+
+      @media (min-width: 900px) {
+        .m-selfhost,
+        .m-docs-grid {
+          grid-template-columns: 0.9fr 1.1fr;
+        }
+      }
+
+      .m-selfhost-list,
+      .m-doc-list {
+        display: grid;
+        gap: 0.85rem;
+        margin: 1.6rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .m-selfhost-list li,
+      .m-doc-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        color: var(--m-ink-2);
+      }
+
+      .m-selfhost-list svg,
+      .m-doc-list svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        flex: 0 0 auto;
+        margin-top: 0.25rem;
+        color: var(--m-beam-ink);
+      }
+
+      .m-terminal,
+      .m-doc-panel {
+        border: 1px solid var(--m-border);
+        border-radius: var(--m-radius-lg);
+        background: color-mix(in srgb, var(--m-inset) 92%, white 2%);
+        overflow: hidden;
+      }
+
+      .m-terminal-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 2.5rem;
+        padding-inline: 0.9rem;
+        border-bottom: 1px solid var(--m-border);
+        color: var(--m-muted);
+        font-family: var(--m-mono);
+        font-size: 0.78rem;
+      }
+
+      .m-terminal-bar i {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--m-faint);
+      }
+
+      .m-terminal-bar span {
+        margin-left: 0.35rem;
+      }
+
+      .m-code {
+        margin: 0;
+        overflow-x: auto;
+        padding: 1.2rem;
+        color: var(--m-ink-2);
+        font-family: var(--m-mono);
+        font-size: 0.86rem;
+        line-height: 1.8;
+      }
+
+      .m-comment {
+        color: var(--m-muted);
+      }
+
+      .m-prompt {
+        color: var(--m-beam-ink);
+      }
+
+      .m-doc-panel {
+        padding: 1.25rem;
+      }
+
+      .m-doc-panel h3 {
+        margin: 0 0 0.55rem;
+        font-size: 1rem;
+      }
+
+      .m-doc-panel p {
+        margin: 0;
+        color: var(--m-muted);
+        font-size: 0.93rem;
+      }
+
+      .m-doc-panel + .m-doc-panel {
+        margin-top: 0.9rem;
+      }
+
+      .m-cta {
+        display: grid;
+        justify-items: start;
+        border: 1px solid var(--m-border);
+        border-radius: var(--m-radius-lg);
+        padding: clamp(1.5rem, 5vw, 3rem);
+        background:
+          radial-gradient(circle at 80% 20%, var(--m-beam-soft), transparent 20rem),
+          var(--m-surface);
+      }
+
+      .m-footer {
+        border-top: 1px solid var(--m-border);
+        padding-block: 1.2rem;
+      }
+
+      .m-footer-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .m-footer-inner nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .m-footer-inner nav a,
+      .m-footer-note {
+        color: var(--m-muted);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 720px) {
+        .m-nav-links a:not(.m-btn) {
+          display: none;
+        }
+
+        .m-compare-head {
+          display: none;
+        }
+
+        .m-compare-row {
+          grid-template-columns: 1fr;
+          gap: 0.45rem;
+        }
+
+        .m-footer-inner {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
   </head>
   <body>
-    <main>
-      <div class="mark"><span class="dot" aria-hidden="true"></span>Beamlink</div>
-      <h1>One link for your release.</h1>
-      <p>
-        Open-source, self-hosted music smartlinks and presaves on Cloudflare Workers,
-        with first-party Meta CAPI tracking and fast edge-rendered fan pages.
-      </p>
-      <div class="actions">
-        <a class="primary" href="https://github.com/DerpcatMusic/beamlink">Get the code</a>
-        <a href="https://github.com/DerpcatMusic/beamlink#setup">Read setup</a>
+    <div class="marketing">
+      <div class="m-backdrop" aria-hidden="true">
+        <div class="m-aurora">
+          <span class="m-aurora-blob m-aurora-blob--1"></span>
+          <span class="m-aurora-blob m-aurora-blob--2"></span>
+          <span class="m-aurora-blob m-aurora-blob--3"></span>
+          <span class="m-aurora-blob m-aurora-blob--4"></span>
+        </div>
+        <div class="m-vignette"></div>
       </div>
-    </main>
+
+      <header class="m-nav">
+        <div class="m-shell m-nav-inner">
+          <a class="m-logo" href="https://github.com/DerpcatMusic/beamlink" aria-label="Beamlink on GitHub">
+            <span class="m-logo-mark" aria-hidden="true"></span>
+            beamlink
+          </a>
+          <nav class="m-nav-links" aria-label="Primary">
+            <a href="#does">What it does</a>
+            <a href="#why">Why us</a>
+            <a href="#setup">Setup</a>
+            <a href="#docs">Docs</a>
+            <a class="m-btn m-btn-secondary" href="https://github.com/DerpcatMusic/beamlink">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+              GitHub
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <section class="m-hero">
+          <div class="m-shell m-hero-grid">
+            <div class="m-hero-copy">
+              <span class="m-announce">
+                <span class="m-announce-tag">free</span>
+                Open source, runs on your own Cloudflare
+              </span>
+              <h1 class="m-display">One link for your release.</h1>
+              <p class="m-lede">
+                Paste a Spotify link and get a fast page that sends fans wherever they listen.
+                Beamlink quietly tells Meta what happened, so your ads learn who to chase.
+              </p>
+              <div class="m-hero-actions">
+                <a class="m-btn m-btn-beam" href="https://github.com/DerpcatMusic/beamlink">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+                  Grab the code
+                </a>
+                <a class="m-btn m-btn-secondary" href="#setup">Set it up</a>
+              </div>
+              <div class="m-hero-meta">
+                <span>Edge-rendered HTML</span>
+                <span>First-party CAPI</span>
+                <span>MIT licensed</span>
+              </div>
+            </div>
+
+            <div class="m-release-stage">
+              <div class="m-live-shell">
+                <div class="m-live-browser" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                  <b>links.dolmengatemedia.com/demon-cake</b>
+                </div>
+                <iframe
+                  class="m-live-frame"
+                  data-live-frame
+                  src="https://links.dolmengatemedia.com/demon-cake?embed=1"
+                  title="Embedded Beamlink smartlink demo"
+                  loading="eager"
+                ></iframe>
+              </div>
+              <a class="m-live-open" href="https://links.dolmengatemedia.com/demon-cake">Open the live shortlink</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="m-section" id="does">
+          <div class="m-shell">
+            <div class="m-section-head">
+              <h2 class="m-h2">Three things, done well.</h2>
+              <p class="m-sub">Built for one job: getting a fan from your ad to the play button, and keeping the tracking honest.</p>
+            </div>
+            <div class="m-steps">
+              <article class="m-step">
+                <span class="m-step-line" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>
+                </span>
+                <h3>Loads before they scroll away</h3>
+                <p>Fan pages are plain HTML from Cloudflare’s edge, so the buttons are tappable almost instantly.</p>
+              </article>
+              <article class="m-step">
+                <span class="m-step-line" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 7-7M5 12a7 7 0 0 0 7 7"/><path d="M2 12a10 10 0 0 1 10-10M2 12a10 10 0 0 0 10 10"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+                </span>
+                <h3>Tracks from your side</h3>
+                <p>Page views and stream clicks can be sent from your own domain with server-set Meta identifiers.</p>
+              </article>
+              <article class="m-step">
+                <span class="m-step-line" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5"/><path d="m11.5 11.5 8 8M16 16l2-2M19 19l2-2"/></svg>
+                </span>
+                <h3>All of it is yours</h3>
+                <p>Your Cloudflare account, your database, your domain, your Meta pixel. No per-click rent.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="m-section" id="why">
+          <div class="m-shell">
+            <div class="m-section-head">
+              <h2 class="m-h2">The open-source option.</h2>
+              <p class="m-sub">
+                Linkfire, Hypeddit and Feature.fm have useful campaign tools. Beamlink is for operators who want the core link, presave, and tracking stack on infrastructure they control.
+              </p>
+            </div>
+            <div class="m-compare">
+              <div class="m-compare-head" aria-hidden="true">
+                <span></span>
+                <span>Beamlink</span>
+                <span>The paid ones</span>
+              </div>
+              <div class="m-compare-row">
+                <span>The page</span>
+                <p class="m-us"><svg class="m-check" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Plain HTML, fast edge response, no cookie banner in front of the links</p>
+                <p>Hosted pages that often load third-party scripts first</p>
+              </div>
+              <div class="m-compare-row">
+                <span>Tracking</span>
+                <p class="m-us"><svg class="m-check" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Meta Pixel plus Conversions API from your own Worker</p>
+                <p>Browser pixel doing best-effort matching</p>
+              </div>
+              <div class="m-compare-row">
+                <span>Ownership</span>
+                <p class="m-us"><svg class="m-check" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>D1, KV, R2, queue, domain, and event logs live in your account</p>
+                <p>The vendor owns the hosting surface and data model</p>
+              </div>
+              <div class="m-compare-row">
+                <span>Price</span>
+                <p class="m-us"><svg class="m-check" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>Free software; Cloudflare’s free tier covers many small catalogs</p>
+                <p>Monthly plans, click tiers, or locked features</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="m-section" id="setup">
+          <div class="m-shell m-selfhost">
+            <div>
+              <h2 class="m-h2">Set it up on Cloudflare.</h2>
+              <ul class="m-selfhost-list">
+                <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Create D1, KV, R2, and queue resources.</li>
+                <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Paste the generated IDs into <code>wrangler.jsonc</code>.</li>
+                <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Add Meta and optional Spotify credentials as Worker secrets.</li>
+                <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Run migrations, deploy, and publish your first link.</li>
+              </ul>
+              <div class="m-hero-actions">
+                <a class="m-btn m-btn-beam" href="https://github.com/DerpcatMusic/beamlink">Fork it on GitHub</a>
+                <a class="m-btn m-btn-secondary" href="https://github.com/DerpcatMusic/beamlink#setup">README setup</a>
+              </div>
+            </div>
+            <div class="m-terminal">
+              <div class="m-terminal-bar" aria-hidden="true">
+                <i></i><i></i><i></i>
+                <span>~/beamlink</span>
+              </div>
+              <pre class="m-code"><code><span class="m-comment"># clone it and boot the local edge</span>
+<span class="m-prompt">$</span> git clone https://github.com/DerpcatMusic/beamlink
+<span class="m-prompt">$</span> cd beamlink && bun install
+<span class="m-prompt">$</span> wrangler d1 migrations apply DB --local
+<span class="m-prompt">$</span> bun run dev
+<span class="m-comment">➜ running at http://localhost:4321</span></code></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="m-section" id="docs">
+          <div class="m-shell m-docs-grid">
+            <div>
+              <h2 class="m-h2">What you get.</h2>
+              <p class="m-sub">
+                The repo is the whole system: admin, importers, public fan pages, outbound routes, metrics, and Meta CAPI retry logging.
+              </p>
+            </div>
+            <div>
+              <article class="m-doc-panel">
+                <h3>Import and publish</h3>
+                <p>Paste Spotify, Apple Music, YouTube, TooLost, or ISRC data, fill missing destinations, and publish to <code>/:slug</code>.</p>
+              </article>
+              <article class="m-doc-panel">
+                <h3>Presaves and live links</h3>
+                <p>Links can switch from presave to live mode using release dates, so campaigns do not need a new URL.</p>
+              </article>
+              <article class="m-doc-panel">
+                <h3>Meta CAPI quality</h3>
+                <p>Server events preserve <code>fbclid</code>/<code>_fbc</code>, send currency/value, and include first-party user data where available.</p>
+              </article>
+              <article class="m-doc-panel">
+                <h3>Self-hosting boundaries</h3>
+                <p>GitHub Pages hosts this documentation. The actual app runs on Cloudflare Workers because it needs D1, KV, R2, queues, redirects, and server tracking.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="m-section">
+          <div class="m-shell">
+            <div class="m-cta">
+              <h2>Clone it, wire it, ship the link.</h2>
+              <p>Beamlink is free, open source, and built for operators who want their release links and tracking under their own account.</p>
+              <div class="m-cta-actions">
+                <a class="m-btn m-btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+                <a class="m-btn m-btn-secondary" href="https://links.dolmengatemedia.com/demo">Open live demo</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="m-footer">
+        <div class="m-shell m-footer-inner">
+          <a class="m-footer-brand" href="https://github.com/DerpcatMusic/beamlink">
+            <span class="m-logo-mark" aria-hidden="true"></span>
+            beamlink
+          </a>
+          <nav aria-label="Footer">
+            <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+            <a href="https://github.com/DerpcatMusic/beamlink#setup">Setup</a>
+            <a href="https://links.dolmengatemedia.com/demo">Demo</a>
+          </nav>
+          <span class="m-footer-note">MIT · self-hosted on Cloudflare</span>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      (() => {
+        const nav = document.querySelector(".m-nav");
+        const onScroll = () => nav?.classList.toggle("is-scrolled", window.scrollY > 8);
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+
+        const frame = document.querySelector("[data-live-frame]");
+        if (frame instanceof HTMLIFrameElement) {
+          const resize = () => {
+            try {
+              const doc = frame.contentDocument;
+              if (!doc) return;
+              const body = doc.body;
+              const root = doc.documentElement;
+              const height = Math.max(
+                body?.scrollHeight ?? 0,
+                body?.offsetHeight ?? 0,
+                root?.scrollHeight ?? 0,
+                root?.offsetHeight ?? 0
+              );
+              if (height > 0) frame.style.height = `${height}px`;
+            } catch {
+              frame.style.height = "40rem";
+            }
+          };
+          frame.addEventListener("load", resize);
+          window.addEventListener("resize", resize, { passive: true });
+          resize();
+        }
+      })();
+    </script>
   </body>
 </html>
