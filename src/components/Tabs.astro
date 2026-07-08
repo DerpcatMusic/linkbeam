@@ -1,0 +1,59 @@
+---
+interface Props {
+  linkId: string;
+  activeTab: "overview" | "edit";
+}
+
+const { linkId, activeTab } = Astro.props;
+
+const tabs = [
+  { id: "overview" as const, label: "Overview", href: `/admin/links/${linkId}` },
+  { id: "edit" as const, label: "Edit", href: `/admin/links/${linkId}/edit` }
+];
+---
+
+<nav class="tabs" aria-label="Link sections">
+  {
+    tabs.map((tab) => (
+      <a class:list={["tab", { active: tab.id === activeTab }]} href={tab.href} aria-current={tab.id === activeTab ? "page" : undefined}>
+        {tab.label}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .tabs {
+    display: flex;
+    gap: 0.15rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    position: relative;
+    padding: 0.55rem 0.75rem;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .tab:hover {
+    color: var(--foreground);
+  }
+
+  .tab.active {
+    color: var(--foreground);
+  }
+
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0.5rem;
+    bottom: -1px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px 2px 0 0;
+  }
+</style>

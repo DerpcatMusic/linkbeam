@@ -1,0 +1,55 @@
+---
+interface Props {
+  id?: string;
+  compact?: boolean;
+}
+
+const { id = "screenshotSafeMode", compact = false } = Astro.props;
+---
+
+<label class:list={["screenshot-safe-toggle", { compact }]}>
+  <input type="checkbox" id={id} name="screenshotSafeMode" />
+  <span class="screenshot-safe-copy">
+    <strong>Screenshot-safe mode</strong>
+    {!compact && (
+      <span class="muted">Blurs campaign IDs, ad IDs, trace IDs, tokens, and attribution so screenshots are safe to share.</span>
+    )}
+  </span>
+</label>
+
+<style>
+  .screenshot-safe-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    cursor: pointer;
+  }
+
+  .screenshot-safe-toggle.compact {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .screenshot-safe-toggle input {
+    margin-top: 0.15rem;
+    accent-color: var(--accent);
+  }
+
+  .screenshot-safe-copy {
+    display: grid;
+    gap: 0.2rem;
+    font-size: var(--text-sm);
+  }
+
+  .screenshot-safe-copy strong {
+    font-weight: 600;
+  }
+
+  .screenshot-safe-copy .muted {
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+</style>

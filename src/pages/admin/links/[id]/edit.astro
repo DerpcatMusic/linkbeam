@@ -1,0 +1,623 @@
+---
+import AppLayout from "@layouts/AppLayout.astro";
+import AdminLinkNav from "@components/AdminLinkNav.astro";
+import Button from "@components/Button.astro";
+import Field from "@components/Field.astro";
+import Icon from "@components/Icon.astro";
+import PlatformIcon from "@components/PlatformIcon.astro";
+import { getLinkById } from "@lib/db";
+import { getRuntimeEnv, publicBaseUrl, requireAdmin } from "@lib/runtime";
+import { artworkPublicPath } from "@lib/artwork";
+import { toDatetimeLocal, formatShortDate } from "@lib/datetime";
+import { effectiveLinkMode, daysUntilRelease } from "@lib/effective-mode";
+import { platformLabels, type Platform } from "@lib/types";
+
+const env = getRuntimeEnv(Astro);
+const blocked = await requireAdmin(Astro.request, env);
+if (blocked) return blocked;
+
+const link = await getLinkById(env, Astro.params.id ?? "");
+if (!link) return Astro.redirect("/admin", 302);
+
+const destinationMap = Object.fromEntries(link.destinations.map((destination) => [destination.platform, destination.url]));
+const artistLabel = link.track.artist_name || "Unknown artist";
+const releaseLocal = toDatetimeLocal(link.track.release_at);
+const baseUrl = publicBaseUrl(env, Astro.request).replace(/\/$/, "");
+const platforms = Object.entries(platformLabels) as Array<[Platform, string]>;
+const artworkSrc = artworkPublicPath(link.track);
+const metadataSourceDefault = link.track.source_url ?? link.destinations.find((destination) => destination.platform === "spotify")?.url ?? link.destinations[0]?.url ?? "";
+const effectiveMode = effectiveLinkMode(link);
+const days = daysUntilRelease(link.track.release_at);
+const identityBadges = [
+  effectiveMode === "presave"
+    ? { label: `Pre-save${days !== null ? ` · ${days}d` : ""}`, variant: "presave" }
+    : { label: "Live", variant: "live" },
+  { label: link.status, variant: link.status }
+];
+---
+
+<AppLayout title={`Edit ${link.link_name}`}>
+  <main class="admin-page shell">
+    <AdminLinkNav
+      linkId={link.id}
+      slug={link.slug}
+      linkName={link.link_name}
+      trackTitle={link.track.title}
+      artistName={artistLabel}
+      activeTab="edit"
+      artworkSrc={artworkSrc}
+      badges={identityBadges}
+    />
+
+    {(link.track.isrc || link.track.source_url) && (
+      <p class="track-caption">
+        {link.track.isrc && <span>ISRC <span class="mono">{link.track.isrc}</span></span>}
+        {link.track.isrc && link.track.source_url && <span class="sep" aria-hidden="true">·</span>}
+        {link.track.source_url && (
+          <a href={link.track.source_url} target="_blank" rel="noreferrer">
+            Imported from {link.track.source_provider}
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h6v6" /><path d="M13 7l-7 7" /></svg>
+          </a>
+        )}
+      </p>
+    )}
+
+    <form id="linkForm">
+      <input type="hidden" name="trackId" id="trackId" value={link.track_id} />
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Metadata source</h2>
+          <p class="block-copy">Refresh title, artists, artwork, date, and store URLs.</p>
+        </div>
+        <div class="block-body">
+          <div class="metadata-row">
+            <Field label="Streaming URL" for="metadataSource">
+              <input id="metadataSource" name="metadataSource" value={metadataSourceDefault} placeholder="https://open.spotify.com/..." />
+            </Field>
+            <Button variant="secondary" id="refreshMetadataButton" type="button">Refresh metadata</Button>
+          </div>
+          <p class="muted metadata-status" id="metadataStatus" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Public link</h2>
+          <p class="block-copy">Name and URL fans see.</p>
+        </div>
+        <div class="block-body field-grid">
+          <Field label="Campaign name" for="linkName">
+            <input id="linkName" name="linkName" required value={link.link_name} />
+          </Field>
+          <Field label="Share URL" for="slug">
+            <div class="slug-field">
+              <span>{baseUrl}/</span>
+              <input id="slug" name="slug" required value={link.slug} />
+            </div>
+          </Field>
+        </div>
+      </section>
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Release behavior</h2>
+          <p class="block-copy" id="modeHint">A future release date switches to pre-save.</p>
+        </div>
+        <div class="block-body field-grid">
+          <Field label="Release date" for="releaseAt" hint={link.track.release_at ? `Stored as ${formatShortDate(link.track.release_at)}` : "Leave empty for a live link"}>
+            <input id="releaseAt" name="releaseAt" type="datetime-local" value={releaseLocal} />
+          </Field>
+          <Field label="Mode" for="mode">
+            <select id="mode" name="mode">
+              <option value="live" selected={link.mode === "live"}>Live now</option>
+              <option value="presave" selected={link.mode === "presave"}>Pre-save until release</option>
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Destinations</h2>
+          <p class="block-copy">Empty stores stay hidden from fans.</p>
+        </div>
+        <div class="block-body">
+          <div class="dest-list">
+            {platforms.map(([platform, label]) => (
+              <label class:list={["dest-item", destinationMap[platform] && "has-value"]} for={`dest-${platform}`}>
+                <PlatformIcon platform={platform} size={20} tint />
+                <span class="dest-name">{label}</span>
+                <input
+                  id={`dest-${platform}`}
+                  name={`destinations.${platform}`}
+                  value={destinationMap[platform] ?? ""}
+                  placeholder={`Paste ${label} URL`}
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Spotify open behavior</h2>
+          <p class="block-copy">Use playlist context or try app-first opening without skipping tracking.</p>
+        </div>
+        <div class="block-body field-grid">
+          <Field label="Open mode" for="spotifyOpenBehavior">
+            <select id="spotifyOpenBehavior" name="spotifyOpenBehavior">
+              <option value="web" selected={link.spotify_open_behavior === "web"}>Web link</option>
+              <option value="playlist_context" selected={link.spotify_open_behavior === "playlist_context"}>Web link with playlist context</option>
+              <option value="app_first" selected={link.spotify_open_behavior === "app_first"}>Try Spotify app, fallback to web</option>
+            </select>
+          </Field>
+          <Field label="Playlist context URL" for="spotifyContextUrl" hint="Optional playlist URL or spotify:playlist URI">
+            <input id="spotifyContextUrl" name="spotifyContextUrl" value={link.spotify_context_url ?? ""} placeholder="https://open.spotify.com/playlist/..." />
+          </Field>
+        </div>
+      </section>
+
+      <section class="form-block">
+        <div class="block-head">
+          <h2 class="section-title">Tracking events</h2>
+          <p class="block-copy">Override the default Meta event names.</p>
+        </div>
+        <div class="block-body field-grid">
+          <Field label="View event name" for="viewEventName" hint="Landing page always fires PageView; this field is no longer applied.">
+            <input id="viewEventName" name="viewEventName" value={link.view_event_name} />
+          </Field>
+          <Field label="Click event name" for="clickEventName" hint="The streaming tap = your conversion. Default: Lead (pre-save), ViewContent (live)">
+            <input id="clickEventName" name="clickEventName" value={link.click_event_name ?? ""} placeholder="Lead / ViewContent" />
+          </Field>
+          <Field label="Paid click event" for="paidClickEventName" hint="Extra event that also fires for fbclid/meta/paid taps (separate from ViewContent).">
+            <input id="paidClickEventName" name="paidClickEventName" value={link.paid_click_event_name} placeholder="Stream_Click_Paid" />
+          </Field>
+        </div>
+      </section>
+
+      <div class="edit-footer">
+        <div class="footer-primary">
+          <Button variant="accent" type="submit">Save changes</Button>
+          <span class="muted save-status" id="saveStatus" aria-live="polite">Status: {link.status}</span>
+        </div>
+        <div class="admin-toolbar footer-secondary">
+          <Button variant="secondary" id="publishButton" type="button">Publish</Button>
+          <Button variant="ghost" id="archiveButton" type="button"><Icon name="archive" /> Archive</Button>
+          <Button class="danger" id="deleteButton" type="button"><Icon name="trash" /> Delete</Button>
+        </div>
+      </div>
+    </form>
+  </main>
+
+  <script is:inline define:vars={{ linkId: link.id }}>
+    const form = document.querySelector("#linkForm");
+    const saveStatus = document.querySelector("#saveStatus");
+    const publishButton = document.querySelector("#publishButton");
+    const archiveButton = document.querySelector("#archiveButton");
+    const deleteButton = document.querySelector("#deleteButton");
+    const metadataSource = document.querySelector("#metadataSource");
+    const refreshMetadataButton = document.querySelector("#refreshMetadataButton");
+    const metadataStatus = document.querySelector("#metadataStatus");
+    const releaseAt = document.querySelector("#releaseAt");
+    const mode = document.querySelector("#mode");
+    const modeHint = document.querySelector("#modeHint");
+
+    function value(id) {
+      return document.querySelector(id).value.trim();
+    }
+
+    function setValue(id, next) {
+      const input = document.querySelector(id);
+      if (input && next) input.value = next;
+    }
+
+    function toDatetimeLocal(iso) {
+      if (!iso) return "";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return iso.length >= 10 ? `${iso.slice(0, 10)}T00:00` : "";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function fromDatetimeLocal(value) {
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toISOString();
+    }
+
+    function syncModeFromRelease() {
+      const raw = value("#releaseAt");
+      if (!raw) {
+        mode.value = "live";
+        modeHint.textContent = "No release date — live now.";
+        return;
+      }
+      const date = new Date(raw);
+      if (!Number.isNaN(date.getTime()) && date.getTime() > Date.now()) {
+        mode.value = "presave";
+        modeHint.textContent = "Future date — pre-save until release.";
+        return;
+      }
+      mode.value = "live";
+      modeHint.textContent = "Date passed — live now.";
+    }
+
+    function payload(extra = {}) {
+      const destinations = {};
+      for (const input of form.querySelectorAll("[name^='destinations.']")) {
+        destinations[input.name.replace("destinations.", "")] = input.value.trim();
+      }
+      const clickEventName = value("#clickEventName");
+      return {
+        trackId: value("#trackId"),
+        linkName: value("#linkName"),
+        slug: value("#slug"),
+        mode: value("#mode"),
+        viewEventName: value("#viewEventName"),
+        clickEventName: clickEventName || null,
+        paidClickEventName: value("#paidClickEventName") || "Stream_Click_Paid",
+        spotifyOpenBehavior: value("#spotifyOpenBehavior") || "web",
+        spotifyContextUrl: value("#spotifyContextUrl") || null,
+        releaseAt: fromDatetimeLocal(value("#releaseAt")),
+        destinations,
+        ...extra
+      };
+    }
+
+    async function saveLinkChanges() {
+      const response = await fetch(`/api/admin/links/${linkId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload())
+      });
+      const data = await response.json();
+      return { response, data };
+    }
+
+    releaseAt.addEventListener("change", syncModeFromRelease);
+    syncModeFromRelease();
+
+    // Light up a store's brand mark the moment it has a URL.
+    for (const input of form.querySelectorAll(".dest-item input")) {
+      input.addEventListener("input", () => {
+        input.closest(".dest-item")?.classList.toggle("has-value", input.value.trim() !== "");
+      });
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      saveStatus.textContent = "Saving…";
+      const { response, data } = await saveLinkChanges();
+      saveStatus.textContent = response.ok ? "Saved." : data.error || "Save failed.";
+    });
+
+    refreshMetadataButton.addEventListener("click", async () => {
+      const source = metadataSource.value.trim();
+      if (!source) {
+        metadataStatus.textContent = "Paste a streaming URL first.";
+        return;
+      }
+      refreshMetadataButton.disabled = true;
+      metadataStatus.textContent = "Refreshing…";
+      try {
+        const response = await fetch("/api/admin/import-track", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            importInput: source,
+            trackId: value("#trackId")
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          metadataStatus.textContent = data.error || "Refresh failed.";
+          return;
+        }
+        const imported = data.imported || {};
+        if (data.track?.id) setValue("#trackId", data.track.id);
+        if (imported.title) setValue("#linkName", imported.title);
+        if (imported.releaseAt) {
+          setValue("#releaseAt", toDatetimeLocal(imported.releaseAt));
+          syncModeFromRelease();
+        }
+        for (const [platform, url] of Object.entries(imported.destinations || {})) {
+          const input = document.querySelector(`#dest-${platform}`);
+          if (input && url) {
+            input.value = url;
+            input.closest(".dest-item")?.classList.add("has-value");
+          }
+        }
+
+        metadataStatus.textContent = "Saving refreshed link…";
+        const saved = await saveLinkChanges();
+        if (!saved.response.ok) {
+          metadataStatus.textContent = saved.data.error || "Metadata refreshed, but link save failed.";
+          return;
+        }
+        metadataStatus.textContent = "Metadata refreshed.";
+        window.setTimeout(() => window.location.reload(), 350);
+      } finally {
+        refreshMetadataButton.disabled = false;
+      }
+    });
+
+    publishButton.addEventListener("click", async () => {
+      saveStatus.textContent = "Publishing…";
+      const response = await fetch(`/api/admin/links/${linkId}/publish`, { method: "POST" });
+      const data = await response.json();
+      saveStatus.textContent = response.ok ? `Published at /${data.link.slug}.` : data.error || "Publish failed.";
+    });
+
+    archiveButton.addEventListener("click", async () => {
+      saveStatus.textContent = "Archiving…";
+      const response = await fetch(`/api/admin/links/${linkId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload({ status: "archived" }))
+      });
+      const data = await response.json();
+      saveStatus.textContent = response.ok ? "Archived." : data.error || "Archive failed.";
+    });
+
+    deleteButton.addEventListener("click", async () => {
+      const name = value("#linkName") || "this link";
+      const confirmed = prompt(`Delete “${name}”? This removes the link and its analytics. Type DELETE to continue.`);
+      if (confirmed !== "DELETE") return;
+      saveStatus.textContent = "Deleting…";
+      const response = await fetch(`/api/admin/links/${linkId}`, { method: "DELETE" });
+      if (response.ok) {
+        window.location.href = "/admin";
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+      saveStatus.textContent = data.error || "Delete failed.";
+    });
+  </script>
+</AppLayout>
+
+<style>
+  .track-caption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: -0.25rem 0 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .track-caption .mono {
+    font-family: var(--mono);
+    color: var(--foreground);
+  }
+
+  .track-caption .sep {
+    color: var(--faint);
+  }
+
+  .track-caption a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--muted);
+    transition: color var(--transition-fast);
+  }
+
+  .track-caption a:hover {
+    color: var(--foreground);
+  }
+
+  form {
+    display: grid;
+  }
+
+  /* Settings-style block: label/description on the left, controls on the right. */
+  .form-block {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 0.5rem 3rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .form-block:first-of-type {
+    border-top: 0;
+    padding-top: 0.5rem;
+  }
+
+  .block-head .section-title {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .block-copy {
+    margin: 0.35rem 0 0;
+    max-width: 34ch;
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: 0.85rem 1rem;
+    align-content: start;
+  }
+
+  .metadata-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.85rem;
+  }
+
+  .metadata-status {
+    min-height: 1.25rem;
+    margin: 0.45rem 0 0;
+    font-size: var(--text-sm);
+  }
+
+  .slug-field {
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 1fr);
+    align-items: center;
+    min-height: 2.25rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--inset);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .slug-field:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .slug-field span {
+    padding-left: 0.65rem;
+    color: var(--faint);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    font-family: var(--mono);
+  }
+
+  .slug-field input {
+    min-height: 2.25rem;
+    border: 0;
+    background: transparent;
+    padding-left: 0.15rem;
+    font-family: var(--mono);
+  }
+
+  .slug-field input:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* Destination editor: one hairline list, brand-tinted marks signal connected stores. */
+  .dest-list {
+    display: grid;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .dest-item {
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 10rem) minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .dest-item:first-child {
+    border-top: 0;
+  }
+
+  .dest-item :global(.platform-icon) {
+    opacity: 0.4;
+    transition: opacity var(--transition-fast);
+  }
+
+  .dest-item.has-value :global(.platform-icon) {
+    opacity: 1;
+  }
+
+  .dest-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .dest-item.has-value .dest-name {
+    color: var(--foreground);
+  }
+
+  .dest-item input {
+    width: 100%;
+    min-height: 2.1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.55rem;
+    background: var(--inset);
+    color: var(--foreground);
+    font-size: var(--text-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .dest-item input::placeholder {
+    color: var(--faint);
+  }
+
+  .dest-item input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .edit-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .save-status {
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 760px) {
+    .form-block {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      padding-block: 1.25rem;
+    }
+
+    .metadata-row {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+
+    .dest-item {
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-areas:
+        "icon name"
+        "input input";
+      row-gap: 0.5rem;
+    }
+
+    .dest-item :global(.platform-icon) {
+      grid-area: icon;
+    }
+
+    .dest-name {
+      grid-area: name;
+    }
+
+    .dest-item input {
+      grid-area: input;
+    }
+  }
+</style>

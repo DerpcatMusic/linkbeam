@@ -1,0 +1,65 @@
+---
+interface Props {
+  variant?: "default" | "success" | "warn" | "danger" | "live" | "presave" | "published" | "draft" | "archived";
+  class?: string;
+}
+
+const { variant = "default", class: className = "" } = Astro.props;
+const classes = ["badge", variant !== "default" ? variant : "", className].filter(Boolean).join(" ");
+---
+
+<span class={classes}><slot /></span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--beamlink-space-2);
+    padding: 0.22rem 0.55rem;
+    border-radius: var(--beamlink-radius-pill);
+    border: 1px solid var(--beamlink-border-strong);
+    font-size: var(--beamlink-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: var(--beamlink-surface-2);
+    color: var(--beamlink-muted);
+  }
+
+  /* Leading status dot for the live/active states */
+  .badge.live::before,
+  .badge.presave::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in oklch, currentColor 22%, transparent);
+  }
+
+  .badge.success,
+  .badge.live,
+  .badge.published {
+    background: var(--beamlink-success-soft);
+    border-color: color-mix(in oklch, var(--beamlink-success) 30%, transparent);
+    color: var(--beamlink-success);
+  }
+
+  .badge.warn,
+  .badge.presave {
+    background: var(--beamlink-warn-soft);
+    border-color: color-mix(in oklch, var(--beamlink-warn) 30%, transparent);
+    color: var(--beamlink-warn);
+  }
+
+  .badge.danger {
+    background: var(--beamlink-danger-soft);
+    border-color: color-mix(in oklch, var(--beamlink-danger) 30%, transparent);
+    color: var(--beamlink-danger);
+  }
+
+  .badge.draft,
+  .badge.archived {
+    background: var(--beamlink-surface-2);
+    color: var(--beamlink-muted);
+  }
+</style>

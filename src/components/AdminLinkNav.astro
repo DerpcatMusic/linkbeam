@@ -1,0 +1,142 @@
+---
+import Tabs from "@components/Tabs.astro";
+import Badge from "@components/Badge.astro";
+
+type BadgeVariant = "default" | "success" | "warn" | "danger" | "live" | "presave" | "published" | "draft" | "archived";
+
+interface BadgeSpec {
+  label: string;
+  variant: string;
+}
+
+interface Props {
+  linkId: string;
+  slug: string;
+  linkName: string;
+  trackTitle: string;
+  artistName: string;
+  activeTab: "overview" | "edit";
+  artworkSrc?: string;
+  badges?: BadgeSpec[];
+}
+
+const { linkId, slug, linkName, trackTitle, artistName, activeTab, artworkSrc, badges = [] } = Astro.props;
+---
+
+<header class="link-nav">
+  <a class="back" href="/admin">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-6 6 6 6" /></svg>
+    All links
+  </a>
+
+  <div class="identity">
+    {artworkSrc && <img class="thumb" src={artworkSrc} alt="" width="52" height="52" loading="lazy" />}
+    <div class="identity-text">
+      <div class="name-line">
+        <h1>{linkName}</h1>
+        {badges.map((b) => <Badge variant={b.variant as BadgeVariant}>{b.label}</Badge>)}
+      </div>
+      <p class="track-meta">
+        <span class="track-title">{trackTitle}</span>
+        <span class="sep" aria-hidden="true">·</span>
+        <span>{artistName}</span>
+        <code class="slug">/{slug}</code>
+      </p>
+    </div>
+  </div>
+
+  <Tabs linkId={linkId} activeTab={activeTab} />
+</header>
+
+<style>
+  .link-nav {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: fit-content;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+  }
+
+  .back:hover {
+    color: var(--foreground);
+  }
+
+  .identity {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
+  .thumb {
+    width: 3.25rem;
+    height: 3.25rem;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .identity-text {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .name-line {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .track-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    min-width: 0;
+  }
+
+  .track-title {
+    color: var(--foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 22ch;
+  }
+
+  .sep {
+    color: var(--faint);
+  }
+
+  .slug {
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-family: var(--mono);
+  }
+</style>

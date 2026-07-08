@@ -1,0 +1,211 @@
+---
+import AppLayout from "@layouts/AppLayout.astro";
+import Button from "@components/Button.astro";
+import Field from "@components/Field.astro";
+import ScreenshotSafeToggle from "@components/ScreenshotSafeToggle.astro";
+import { listRecentCapiLogs } from "@lib/capi-log";
+import { getMetaDatasetQuality } from "@lib/meta-quality";
+import { getMetaAccessToken, getMetaAdAccountId, getMetaApiVersion, getMetaPixelId, getSetting, metaEventsManagerUrl } from "@lib/settings";
+import { getRuntimeEnv, requireAdmin } from "@lib/runtime";
+
+const env = getRuntimeEnv(Astro);
+const blocked = await requireAdmin(Astro.request, env);
+if (blocked) return blocked;
+
+const [metaPixelId, metaTestEventCode, metaAccessToken, metaApiVersion, metaAdAccountId, capiLogs, envPixelId, metaQuality] = await Promise.all([
+  getSetting(env, "meta_pixel_id"),
+  getSetting(env, "meta_test_event_code"),
+  getMetaAccessToken(env),
+  getMetaApiVersion(env),
+  getMetaAdAccountId(env),
+  listRecentCapiLogs(env, 50),
+  getMetaPixelId(env),
+  getMetaDatasetQuality(env)
+]);
+
+const pixelConfigured = Boolean(envPixelId);
+const capiConfigured = pixelConfigured && Boolean(metaAccessToken);
+const eventsManagerUrl = metaEventsManagerUrl(envPixelId);
+const qualityEvents = metaQuality?.events ?? [];
+---
+
+<AppLayout title="Settings">
+  <main class="admin-page shell">
+    <header class="admin-header">
+      <div>
+        <a class="back" href="/admin">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-6 6 6 6" /></svg>
+          All links
+        </a>
+        <h1>Settings</h1>
+        <div class={`tracking-status ${capiConfigured ? "ok" : pixelConfigured ? "warn" : "muted"}`}>
+          <span class="dot" aria-hidden="true"></span>
+          <p>
+            {capiConfigured
+              ? "Connected. Events sent to Meta."
+              : pixelConfigured
+                ? "Pixel set, META_ACCESS_TOKEN missing. CAPI paused."
+                : "Not connected. First-party tracking only."}
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <form class="admin-panel" id="settingsForm">
+      <ScreenshotSafeToggle />
+      <Field label="Meta Pixel ID" for="metaPixelId" hint={pixelConfigured ? `Active: ${envPixelId}` : "Set here or in Wrangler env."}>
+        <input id="metaPixelId" name="metaPixelId" data-sensitive value={metaPixelId ?? ""} placeholder="From env if empty" />
+      </Field>
+      <Field label="Meta CAPI access token" for="metaAccessToken" hint={metaAccessToken ? "Token stored. Leave blank to keep it." : "Paste the dataset access token."}>
+        <input id="metaAccessToken" name="metaAccessToken" data-sensitive type="password" autocomplete="off" placeholder="Leave blank to keep current token" />
+      </Field>
+      <Field label="Meta API version" for="metaApiVersion">
+        <input id="metaApiVersion" name="metaApiVersion" value={metaApiVersion} placeholder="v23.0" />
+      </Field>
+      <Field label="Meta test event code" for="metaTestEventCode">
+        <input id="metaTestEventCode" name="metaTestEventCode" data-sensitive value={metaTestEventCode ?? ""} />
+      </Field>
+      <Field label="Meta ad account ID" for="metaAdAccountId" hint="act_123… from Ads Manager. Enables spend + campaign names in link analytics.">
+        <input id="metaAdAccountId" name="metaAdAccountId" data-sensitive value={metaAdAccountId ?? ""} placeholder="act_1234567890" />
+      </Field>
+      <div class="form-actions">
+        <Button variant="accent" type="submit">Save settings</Button>
+        <Button variant="secondary" id="testPixel" type="button" disabled={!capiConfigured}>Send test event</Button>
+        <p class="muted" id="saveStatus" aria-live="polite"></p>
+      </div>
+    </form>
+
+    <section class="admin-panel">
+      <div class="panel-head">
+        <h2>Meta event quality</h2>
+        <Button variant="ghost" size="sm" href={eventsManagerUrl} target="_blank" rel="noreferrer" data-sensitive>
+          Events Manager
+        </Button>
+      </div>
+      {!capiConfigured ? (
+        <p class="muted">Connect CAPI to load Event Match Quality from Meta.</p>
+      ) : metaQuality?.error ? (
+        <p class="muted">Meta quality API: {metaQuality.error}</p>
+      ) : qualityEvents.length === 0 ? (
+        <p class="muted">No quality data yet. Meta needs server event volume before scores appear.</p>
+      ) : (
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Event</th><th>EMQ</th><th>Pixel coverage</th><th>Diagnostics</th></tr>
+            </thead>
+            <tbody>
+              {qualityEvents.map((event) => (
+                <tr>
+                  <td>{event.eventName}</td>
+                  <td class="tabular-nums">{event.emqScore !== undefined ? `${event.emqScore.toFixed(1)}/10` : "—"}</td>
+                  <td class="tabular-nums">{event.eventCoverage !== undefined ? `${event.eventCoverage.toFixed(0)}%` : "—"}</td>
+                  <td>{event.diagnostics.length > 0 ? event.diagnostics[0].name : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {metaQuality?.fetchedAt && <p class="muted quality-updated">Updated {metaQuality.fetchedAt.slice(0, 19)} UTC · cached ~15 min</p>}
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-head">
+        <h2>CAPI health (last 50)</h2>
+        <Button variant="ghost" size="sm" href={eventsManagerUrl} target="_blank" rel="noreferrer" data-sensitive>
+          Events Manager
+        </Button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Time</th><th>Event</th><th>Kind</th><th>Status</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            {capiLogs.length === 0 ? (
+              <tr><td colspan="5" class="muted">No events yet.</td></tr>
+            ) : (
+              capiLogs.map((row) => (
+                <tr>
+                  <td>{row.created_at.slice(0, 19)}</td>
+                  <td class="mono" data-sensitive>{row.event_id.slice(0, 18)}…</td>
+                  <td>{row.kind}</td>
+                  <td class={row.status}>{row.status}</td>
+                  <td data-sensitive>{row.error_message ?? row.meta_trace_id ?? "—"}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script is:inline>
+    const form = document.querySelector("#settingsForm");
+    const saveStatus = document.querySelector("#saveStatus");
+    const testPixel = document.querySelector("#testPixel");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      saveStatus.textContent = "Saving…";
+      const response = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          metaPixelId: document.querySelector("#metaPixelId").value.trim(),
+          metaAccessToken: document.querySelector("#metaAccessToken").value.trim(),
+          metaApiVersion: document.querySelector("#metaApiVersion").value.trim(),
+          metaTestEventCode: document.querySelector("#metaTestEventCode").value.trim(),
+          metaAdAccountId: document.querySelector("#metaAdAccountId").value.trim()
+        })
+      });
+      const data = await response.json();
+      saveStatus.textContent = response.ok ? "Saved." : data.error || "Save failed.";
+    });
+
+    testPixel.addEventListener("click", async () => {
+      saveStatus.textContent = "Sending test event…";
+      const response = await fetch("/api/admin/test-pixel", { method: "POST" });
+      const data = await response.json();
+      saveStatus.textContent = response.ok
+        ? `Test ${data.status}. Event ${data.eventId}. Trace: ${data.metaTraceId ?? "n/a"}`
+        : data.error || "Test failed.";
+    });
+  </script>
+</AppLayout>
+
+<style>
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: color var(--transition-fast);
+  }
+
+  .back:hover {
+    color: var(--foreground);
+  }
+
+  .admin-header h1 {
+    margin-bottom: 0.4rem;
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--text-xs);
+  }
+</style>

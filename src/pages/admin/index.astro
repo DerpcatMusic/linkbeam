@@ -1,0 +1,307 @@
+---
+import AppLayout from "@layouts/AppLayout.astro";
+import Badge from "@components/Badge.astro";
+import Button from "@components/Button.astro";
+import Icon from "@components/Icon.astro";
+import SettingsModal from "@components/SettingsModal.astro";
+import { listLinks } from "@lib/db";
+import { getRuntimeEnv, publicBaseUrl, requireAdmin } from "@lib/runtime";
+import { isOnboardingCompleted } from "@lib/settings";
+import { effectiveLinkMode, daysUntilRelease } from "@lib/effective-mode";
+import { getLinkStats, getLinksTimeseries, sparklinePath } from "@lib/stats";
+import { artworkPublicPath } from "@lib/artwork";
+
+const env = getRuntimeEnv(Astro);
+const blocked = await requireAdmin(Astro.request, env);
+if (blocked) return blocked;
+
+const onboardingDone = await isOnboardingCompleted(env);
+if (!onboardingDone) {
+  return Astro.redirect("/admin/onboarding");
+}
+
+const links = await listLinks(env);
+const baseUrl = publicBaseUrl(env, Astro.request).replace(/\/$/, "");
+const statsMap = new Map<string, Awaited<ReturnType<typeof getLinkStats>>>();
+const timeseriesMap = await getLinksTimeseries(env, links.map((link) => link.id), 14);
+
+for (const link of links) {
+  statsMap.set(link.id, await getLinkStats(env, link.id));
+}
+---
+
+<AppLayout title="Links">
+  <main class="admin-page shell">
+    <header class="admin-header">
+      <div>
+        <h1>Links</h1>
+        <p class="lede muted">Create release links, watch tap-through, and keep Meta tracking honest.</p>
+      </div>
+      <div class="admin-header-actions">
+        <Button variant="ghost" size="sm" href="/admin/onboarding">Setup</Button>
+        <Button class="icon-only" variant="secondary" href="/admin/settings" data-settings-open aria-haspopup="dialog" title="Tracking settings" aria-label="Open tracking settings"><Icon name="settings" /></Button>
+        <Button href="/admin/links/new"><Icon name="plus" /> New link</Button>
+      </div>
+    </header>
+
+    <div class="admin-filters admin-filters--bar" role="toolbar" aria-label="Filter links">
+      <label>
+        Status
+        <select id="statusFilter">
+          <option value="all">All</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="archived">Archived</option>
+        </select>
+      </label>
+      <label>
+        Mode
+        <select id="modeFilter">
+          <option value="all">All</option>
+          <option value="live">Live</option>
+          <option value="presave">Pre-save</option>
+        </select>
+      </label>
+    </div>
+
+    {links.length === 0 ? (
+      <div class="admin-empty">
+        <strong>No links yet</strong>
+        <p>Import a track from a Spotify URL or ISRC to get started.</p>
+        <Button variant="accent" href="/admin/links/new">Create first link</Button>
+      </div>
+    ) : (
+      <div class="admin-empty" id="filterEmpty" hidden>
+        <strong>No links match these filters</strong>
+        <p>Try a different status or mode, or clear the filters to see all links.</p>
+      </div>
+      <section class="link-list" aria-label="Links">
+        {links.map((link) => {
+          const stats = statsMap.get(link.id)!;
+          const effectiveMode = effectiveLinkMode(link);
+          const days = daysUntilRelease(link.track.release_at);
+          const spark = sparklinePath(timeseriesMap.get(link.id) ?? []);
+          const ctr = stats.views > 0 ? `${((stats.ctr) * 100).toFixed(1)}%` : "—";
+          return (
+            <article class="link-row" data-status={link.status} data-mode={effectiveMode}>
+              <a class="row-main" href={`/admin/links/${link.id}`}>
+                <img class="thumb" src={artworkPublicPath(link.track)} alt="" width="40" height="40" loading="lazy" />
+                <div class="row-meta">
+                  <div class="row-title">
+                    <strong>{link.link_name}</strong>
+                    <Badge variant={effectiveMode}>
+                      {effectiveMode === "presave" ? `Pre-save${days !== null ? ` · ${days}d` : ""}` : "Live"}
+                    </Badge>
+                    <Badge variant={link.status}>{link.status}</Badge>
+                  </div>
+                  <span class="track muted">{link.track.title} · {link.track.artist_name || "Unknown artist"}</span>
+                </div>
+                <div class="row-metrics tabular-nums">
+                  <span>{stats.views} views</span>
+                  <span>{stats.clicks} clicks</span>
+                  <span>CTR {ctr}</span>
+                </div>
+                <svg class="spark" viewBox="0 0 80 24" aria-hidden="true">
+                  <path d={spark || "M0,24 L80,24"} fill="none" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+              </a>
+              <div class="row-actions" aria-label={`Actions for ${link.link_name}`}>
+                <Button
+                  class="icon-only"
+                  variant="ghost"
+                  size="sm"
+                  href={`${baseUrl}/${link.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`Open /${link.slug}`}
+                  aria-label={`Open public link for ${link.link_name}`}
+                >
+                  <Icon name="open" />
+                </Button>
+                <Button
+                  class="icon-only"
+                  variant="ghost"
+                  size="sm"
+                  href={`/admin/links/${link.id}/edit`}
+                  title={`Edit ${link.link_name}`}
+                  aria-label={`Edit ${link.link_name}`}
+                >
+                  <Icon name="edit" />
+                </Button>
+                <Button
+                  class="icon-only delete-link"
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  data-id={link.id}
+                  data-name={link.link_name}
+                  title={`Delete ${link.link_name}`}
+                  aria-label={`Delete ${link.link_name}`}
+                >
+                  <Icon name="trash" />
+                </Button>
+              </div>
+            </article>
+          );
+        })}
+      </section>
+    )}
+  </main>
+
+  <SettingsModal />
+
+  <script is:inline>
+    const statusFilter = document.querySelector("#statusFilter");
+    const modeFilter = document.querySelector("#modeFilter");
+    const filterEmpty = document.querySelector("#filterEmpty");
+    const linkList = document.querySelector(".link-list");
+
+    function applyFilters() {
+      const status = statusFilter.value;
+      const mode = modeFilter.value;
+      let visible = 0;
+      for (const row of document.querySelectorAll(".link-row")) {
+        const statusMatch = status === "all" || row.dataset.status === status;
+        const modeMatch = mode === "all" || row.dataset.mode === mode;
+        const show = statusMatch && modeMatch;
+        row.hidden = !show;
+        if (show) visible += 1;
+      }
+      const filtering = status !== "all" || mode !== "all";
+      filterEmpty.hidden = !(filtering && visible === 0);
+      linkList.hidden = filtering && visible === 0;
+    }
+
+    statusFilter.addEventListener("change", applyFilters);
+    modeFilter.addEventListener("change", applyFilters);
+
+    for (const button of document.querySelectorAll(".delete-link")) {
+      button.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const name = button.dataset.name;
+        if (!confirm(`Delete “${name}”? This removes the link and its analytics. This cannot be undone.`)) return;
+        const response = await fetch(`/api/admin/links/${button.dataset.id}`, { method: "DELETE" });
+        if (response.ok) {
+          button.closest(".link-row")?.remove();
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Delete failed.");
+      });
+    }
+  </script>
+</AppLayout>
+
+<style>
+  .link-list {
+    display: grid;
+    gap: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .link-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.35rem;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+    transition:
+      background-color var(--transition-fast);
+  }
+
+  .link-row:last-child {
+    border-bottom: 0;
+  }
+
+  .link-row:hover {
+    background: color-mix(in oklch, var(--surface-2) 42%, transparent);
+  }
+
+  .row-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.8rem;
+    min-width: 0;
+    transition: background-color var(--transition-fast);
+  }
+
+  .row-main:hover {
+    background: transparent;
+  }
+
+  .row-main:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: -2px;
+  }
+
+  .thumb {
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+
+  .row-meta {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .row-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: var(--text-sm);
+  }
+
+  .track {
+    font-size: var(--text-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row-metrics {
+    display: flex;
+    gap: 0.65rem;
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+
+  .spark {
+    width: 4.5rem;
+    height: 1.35rem;
+    color: oklch(0.72 0.006 260 / 0.85);
+  }
+
+  .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding-right: 0.45rem;
+  }
+
+  .delete-link {
+    color: oklch(0.78 0.12 28);
+  }
+
+  @media (max-width: 820px) {
+    .row-main {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .row-metrics,
+    .spark {
+      display: none;
+    }
+  }
+</style>

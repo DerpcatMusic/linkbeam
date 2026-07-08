@@ -1,0 +1,20 @@
+---
+import BaseLayout, { type LayoutHeadProps } from "./BaseLayout.astro";
+
+interface Props extends LayoutHeadProps {
+  bodyClass?: string;
+}
+
+const { bodyClass = "", ...head } = Astro.props;
+const classes = ["beamlink-link", bodyClass].filter(Boolean).join(" ");
+---
+
+<BaseLayout {...head} surface="link" bodyClass={classes}>
+  <slot />
+</BaseLayout>
+
+<style>
+  .beamlink-link {
+    min-height: 100dvh;
+  }
+</style>

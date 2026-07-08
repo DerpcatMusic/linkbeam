@@ -1,0 +1,933 @@
+:root {
+  /* ── Beamlink design tokens (canonical) ─────────────────────────────────── */
+
+  /* Color — admin instrument panel (default surface) */
+  --beamlink-bg: oklch(0.125 0.005 265);
+  --beamlink-ink: oklch(0.97 0.003 265);
+  --beamlink-surface: oklch(0.17 0.006 265);
+  --beamlink-surface-2: oklch(0.205 0.007 265);
+  --beamlink-surface-3: oklch(0.245 0.008 265);
+  --beamlink-inset: oklch(0.105 0.005 265);
+  --beamlink-muted: oklch(0.72 0.006 265);
+  --beamlink-faint: oklch(0.6 0.006 265);
+  --beamlink-border: oklch(1 0 0 / 0.07);
+  --beamlink-border-strong: oklch(1 0 0 / 0.13);
+  --beamlink-primary: oklch(0.93 0.003 265);
+  --beamlink-primary-ink: oklch(0.17 0.006 265);
+  --beamlink-accent: oklch(0.56 0.16 258);
+  --beamlink-accent-hover: oklch(0.5 0.16 258);
+  --beamlink-accent-soft: oklch(0.62 0.16 258 / 0.18);
+  --beamlink-accent-ink: oklch(0.99 0.01 258);
+  --beamlink-success: oklch(0.76 0.15 156);
+  --beamlink-success-soft: oklch(0.76 0.15 156 / 0.16);
+  --beamlink-warn: oklch(0.8 0.13 78);
+  --beamlink-warn-soft: oklch(0.8 0.13 78 / 0.16);
+  --beamlink-danger: oklch(0.68 0.19 22);
+  --beamlink-danger-soft: oklch(0.68 0.19 22 / 0.15);
+
+  /* Spacing scale */
+  --beamlink-space-1: 0.25rem;
+  --beamlink-space-2: 0.5rem;
+  --beamlink-space-3: 0.75rem;
+  --beamlink-space-4: 1rem;
+  --beamlink-space-5: 1.25rem;
+  --beamlink-space-6: 1.5rem;
+  --beamlink-space-7: 2rem;
+  --beamlink-space-8: 2.5rem;
+  --beamlink-space-9: 3rem;
+  --beamlink-space-10: 4rem;
+
+  /* Typography */
+  --beamlink-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --beamlink-font-display: "Onest", var(--beamlink-font-sans);
+  --beamlink-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --beamlink-text-xs: 0.79rem;
+  --beamlink-text-sm: 0.889rem;
+  --beamlink-text-base: 1rem;
+  --beamlink-text-lg: 1.125rem;
+  --beamlink-text-xl: 1.266rem;
+  --beamlink-text-2xl: 1.424rem;
+  --beamlink-display-sm: clamp(1.75rem, 2.5vw + 1rem, 2.5rem);
+  --beamlink-display-md: clamp(2.25rem, 4vw + 1rem, 3.5rem);
+  --beamlink-display-lg: clamp(2.75rem, 5vw + 1rem, 4.5rem);
+  --beamlink-prose-width: 68ch;
+
+  /* Radii */
+  --beamlink-radius-sm: 7px;
+  --beamlink-radius: 10px;
+  --beamlink-radius-lg: 14px;
+  --beamlink-radius-pill: 999px;
+
+  /* Elevation */
+  --beamlink-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.28);
+  --beamlink-shadow-panel: 0 1px 2px oklch(0 0 0 / 0.28);
+  --beamlink-shadow-pop: 0 8px 18px -10px oklch(0 0 0 / 0.65);
+
+  /* Z-index scale */
+  --beamlink-z-base: 0;
+  --beamlink-z-dropdown: 10;
+  --beamlink-z-sticky: 20;
+  --beamlink-z-modal-backdrop: 30;
+  --beamlink-z-modal: 40;
+  --beamlink-z-toast: 50;
+  --beamlink-z-tooltip: 60;
+
+  /* Motion + interaction */
+  --beamlink-transition-fast: 150ms cubic-bezier(0.2, 0, 0, 1);
+  --beamlink-focus-ring: 2px solid var(--beamlink-accent);
+  --beamlink-focus-offset: 2px;
+  --beamlink-hover-border: var(--beamlink-border-strong);
+  --beamlink-disabled-opacity: 0.45;
+  --beamlink-max-width: 72rem;
+  --beamlink-shell-width: min(var(--beamlink-max-width), calc(100% - var(--beamlink-space-8)));
+
+  /* ── Legacy aliases (prefer --beamlink-* in new code) ───────────────────── */
+
+  --background: var(--beamlink-bg);
+  --surface: var(--beamlink-surface);
+  --surface-2: var(--beamlink-surface-2);
+  --surface-3: var(--beamlink-surface-3);
+  --inset: var(--beamlink-inset);
+  --foreground: var(--beamlink-ink);
+  --muted: var(--beamlink-muted);
+  --faint: var(--beamlink-faint);
+  --border: var(--beamlink-border);
+  --border-strong: var(--beamlink-border-strong);
+  --primary: var(--beamlink-primary);
+  --primary-ink: var(--beamlink-primary-ink);
+  --accent: var(--beamlink-accent);
+  --accent-hover: var(--beamlink-accent-hover);
+  --accent-soft: var(--beamlink-accent-soft);
+  --accent-ink: var(--beamlink-accent-ink);
+  --success: var(--beamlink-success);
+  --success-soft: var(--beamlink-success-soft);
+  --warn: var(--beamlink-warn);
+  --warn-soft: var(--beamlink-warn-soft);
+  --danger: var(--beamlink-danger);
+  --danger-soft: var(--beamlink-danger-soft);
+  --radius-sm: var(--beamlink-radius-sm);
+  --radius: var(--beamlink-radius);
+  --radius-md: var(--beamlink-radius-lg);
+  --radius-lg: var(--beamlink-radius-lg);
+  --radius-pill: var(--beamlink-radius-pill);
+  --shadow-sm: var(--beamlink-shadow-sm);
+  --shadow-panel: var(--beamlink-shadow-panel);
+  --shadow-pop: var(--beamlink-shadow-pop);
+  --font: var(--beamlink-font-sans);
+  --mono: var(--beamlink-font-mono);
+  --transition-fast: var(--beamlink-transition-fast);
+  --focus-ring: var(--beamlink-focus-ring);
+  --focus-offset: var(--beamlink-focus-offset);
+  --hover-border: var(--beamlink-hover-border);
+  --disabled-opacity: var(--beamlink-disabled-opacity);
+  --text-xs: var(--beamlink-text-xs);
+  --text-sm: var(--beamlink-text-sm);
+  --text-base: var(--beamlink-text-base);
+  --text-lg: var(--beamlink-text-lg);
+  --text-xl: var(--beamlink-text-xl);
+  --text-2xl: var(--beamlink-text-2xl);
+  --space-1: var(--beamlink-space-1);
+  --space-2: var(--beamlink-space-2);
+  --space-3: var(--beamlink-space-3);
+  --space-4: var(--beamlink-space-4);
+  --space-5: var(--beamlink-space-5);
+  --space-6: var(--beamlink-space-6);
+  --space-7: var(--beamlink-space-7);
+  --space-8: var(--beamlink-space-8);
+  --step-1: var(--beamlink-text-xs);
+  --step-2: var(--beamlink-text-sm);
+  --step-3: var(--beamlink-text-xl);
+  --step-4: var(--beamlink-text-2xl);
+}
+
+/* Marketing surface — clear product communication, light ambient */
+[data-surface="marketing"] {
+  --beamlink-bg: oklch(0.99 0.002 265);
+  --beamlink-ink: oklch(0.2 0.02 265);
+  --beamlink-surface: oklch(0.97 0.004 265);
+  --beamlink-surface-2: oklch(0.94 0.006 265);
+  --beamlink-surface-3: oklch(0.91 0.008 265);
+  --beamlink-inset: oklch(0.985 0.003 265);
+  --beamlink-muted: oklch(0.5 0.02 265);
+  --beamlink-faint: oklch(0.62 0.015 265);
+  --beamlink-border: oklch(0.2 0.02 265 / 0.1);
+  --beamlink-border-strong: oklch(0.2 0.02 265 / 0.16);
+  --beamlink-primary: oklch(0.2 0.02 265);
+  --beamlink-primary-ink: oklch(0.99 0.002 265);
+  --beamlink-accent: oklch(0.48 0.17 258);
+  --beamlink-accent-hover: oklch(0.42 0.17 258);
+  --beamlink-accent-soft: oklch(0.48 0.17 258 / 0.14);
+  --beamlink-accent-ink: oklch(0.99 0.01 258);
+  --beamlink-shadow-sm: 0 1px 2px oklch(0.2 0.02 265 / 0.06);
+  --beamlink-shadow-panel: 0 1px 2px oklch(0.2 0.02 265 / 0.05), 0 16px 40px -24px oklch(0.2 0.02 265 / 0.12);
+  --beamlink-shadow-pop: 0 12px 36px -12px oklch(0.2 0.02 265 / 0.18);
+}
+
+/* Public link surface — release is the brand; neutral until artwork palette applies */
+[data-surface="link"] {
+  --beamlink-bg: oklch(0.12 0.01 265);
+  --beamlink-ink: oklch(0.97 0.003 265);
+  --beamlink-surface: oklch(0.2 0.008 265);
+  --beamlink-surface-2: oklch(0.26 0.008 265);
+  --beamlink-muted: oklch(0.74 0.01 265);
+  --beamlink-border: oklch(1 0 0 / 0.12);
+  --beamlink-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font);
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv05" 1, "ss01" 1;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.shell,
+.beamlink-shell {
+  width: var(--beamlink-shell-width);
+  margin-inline: auto;
+}
+
+/* Marketing typography utilities */
+[data-surface="marketing"] h1,
+[data-surface="marketing"] .beamlink-display-lg {
+  font-family: var(--beamlink-font-display);
+  font-size: var(--beamlink-display-lg);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+[data-surface="marketing"] h2,
+[data-surface="marketing"] .beamlink-display-md {
+  font-family: var(--beamlink-font-display);
+  font-size: var(--beamlink-display-md);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+[data-surface="marketing"] h3,
+[data-surface="marketing"] .beamlink-display-sm {
+  font-family: var(--beamlink-font-display);
+  font-size: var(--beamlink-display-sm);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+[data-surface="marketing"] .beamlink-prose {
+  max-width: var(--beamlink-prose-width);
+  text-wrap: pretty;
+}
+
+.beamlink-marketing {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legacy class aliases — prefer Button.astro */
+.button {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.45rem 0.8rem;
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.button:hover {
+  background: oklch(0.86 0.003 265);
+}
+
+.button:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+}
+
+.button.icon-only {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  padding-inline: 0;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+.button.secondary {
+  background: transparent;
+  color: var(--foreground);
+  border-color: var(--border-strong);
+}
+
+.button.secondary:hover {
+  background: var(--surface-3);
+  border-color: var(--hover-border);
+}
+
+.button.accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+.button.accent:hover {
+  background: var(--accent-hover);
+}
+
+.button.danger {
+  background: transparent;
+  color: oklch(0.82 0.11 22);
+  border-color: var(--danger-soft);
+}
+
+.button.danger:hover {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: oklch(0.88 0.1 22);
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.field label {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.65rem;
+  background: color-mix(in oklch, var(--inset) 82%, var(--surface));
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+/* Admin layout vocabulary */
+.admin-page {
+  display: grid;
+  gap: 0.85rem;
+  padding-block: 1.25rem 2.25rem;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  min-height: 3.5rem;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 720;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(0.72 0.1 258);
+}
+
+.admin-header .lede {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.admin-panel {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 1rem;
+  background: var(--surface);
+}
+
+.admin-panel h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Borderless titled region — sits on the page, not a card. */
+.section {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.section > h2,
+.section-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-filters--bar {
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.45rem;
+  background: var(--surface);
+}
+
+.admin-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-filters select {
+  min-height: 1.9rem;
+  min-width: 8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  background: var(--inset);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.admin-filters select:hover {
+  background: var(--surface-2);
+}
+
+.admin-filters select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.5rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
+.admin-table tbody tr:hover {
+  background: color-mix(in oklch, var(--surface-2) 55%, transparent);
+}
+
+.admin-table th {
+  color: var(--faint);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-table .sent {
+  color: var(--success);
+}
+
+/* Metric strip — KPIs on the page, divided, not carded */
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.15rem 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.metric {
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+  padding: 0.9rem 1.1rem;
+  min-width: 0;
+  border-inline-start: 1px solid var(--border);
+}
+
+.metric:first-child {
+  border-inline-start: 0;
+}
+
+.metric .label {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.metric .value {
+  color: var(--foreground);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric .value.accent {
+  color: oklch(0.78 0.12 258);
+}
+
+.metric .value.success {
+  color: oklch(0.82 0.13 156);
+}
+
+/* Ranked breakdown list with inline share bars */
+.data-list {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.data-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.15rem;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.data-row:hover {
+  background: color-mix(in oklch, var(--surface-2) 45%, transparent);
+}
+
+.data-row:last-child {
+  border-bottom: 0;
+}
+
+.data-row .name {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.data-row .name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-row .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+
+.data-bar {
+  grid-column: 1 / -1;
+  height: 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.data-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: oklch(0.62 0.15 258);
+}
+
+/* Status line with a state dot — shared by overview and settings. */
+.tracking-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.tracking-status p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+.tracking-status .dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.tracking-status.ok .dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.tracking-status.warn .dot {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
+.admin-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-stat {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.admin-stat .label {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.admin-stat .value {
+  color: var(--foreground);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--danger-soft);
+  background: var(--danger-soft);
+  color: oklch(0.88 0.1 22);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.admin-table .failed {
+  color: var(--danger);
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-empty {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: start;
+  padding: 1.5rem 1.35rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--surface) 88%, transparent);
+}
+
+.admin-empty strong {
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.admin-empty p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  max-width: 42ch;
+  line-height: 1.5;
+}
+
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.auth-panel {
+  width: min(100%, 24rem);
+  display: grid;
+  gap: 1.15rem;
+}
+
+.auth-panel h1 {
+  margin: 0.15rem 0 0.35rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-panel .muted {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.form-grid,
+.dest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.url-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.3rem 0.3rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--inset);
+}
+
+.url-bar code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+@media (max-width: 720px) {
+  .admin-header {
+    align-items: start;
+  }
+
+  .admin-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .button:active:not(:disabled):not([aria-disabled="true"]) {
+    transform: none;
+  }
+}
+
+/* Screenshot-safe mode — blur sensitive admin values for shareable screenshots */
+body.screenshot-safe [data-sensitive] {
+  filter: blur(7px);
+  opacity: 0.88;
+  user-select: none;
+  pointer-events: none;
+}
+
+body.screenshot-safe [data-sensitive]::selection {
+  background: transparent;
+}
+
+/* Shared analytics tooltip surface (chart + heatmap) */
+.chart-tooltip {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.65rem;
+  margin: 0;
+}
+
+.chart-tooltip-stats dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.chart-tooltip-stats dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.chart-tooltip-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crosshair,
+  .hover-dot,
+  .chart-tooltip,
+  .heatmap-tooltip {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "beamlink",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "wrangler d1 migrations apply DB --local && astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "deploy": "bun run build && wrangler deploy --config dist/server/wrangler.json --keep-vars",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14",
+    "astro": "^7",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@cloudflare/workers-types": "^4.20260621.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16",
+    "wrangler": "^4.105.0"
+  }
+}

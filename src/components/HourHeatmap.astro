@@ -1,0 +1,239 @@
+---
+import type { HourHeatmap } from "@lib/stats";
+
+interface Props {
+  data: HourHeatmap;
+  ariaLabel?: string;
+}
+
+const { data, ariaLabel = "Taps by hour of day and weekday (UTC)" } = Astro.props;
+const heatmapId = `heatmap-${Math.random().toString(36).slice(2, 9)}`;
+
+const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const hours = Array.from({ length: 24 }, (_, hour) => hour);
+const hourAxis = [0, 3, 6, 9, 12, 15, 18, 21];
+
+const byCell = new Map(data.cells.map((cell) => [`${cell.weekday}-${cell.hour}`, cell.count]));
+
+function intensity(count: number): number {
+  if (count <= 0 || data.max <= 0) return 0;
+  return Math.min(1, 0.15 + 0.85 * Math.sqrt(count / data.max));
+}
+
+function hourLabel(hour: number): string {
+  const suffix = hour < 12 ? "am" : "pm";
+  const twelve = hour % 12 === 0 ? 12 : hour % 12;
+  return `${twelve}${suffix}`;
+}
+---
+
+<figure class="heatmap-wrap" data-heatmap={heatmapId} aria-label={ariaLabel}>
+  {data.total === 0 ? (
+    <p class="muted empty-line">No taps in this range yet.</p>
+  ) : (
+    <div class="heatmap" role="img" aria-label={ariaLabel}>
+      <div class="corner" aria-hidden="true"></div>
+      <div class="hours-axis" aria-hidden="true">
+        {hours.map((hour) => (
+          <span class:list={["hour-tick", hourAxis.includes(hour) && "labelled"]}>
+            {hourAxis.includes(hour) ? hourLabel(hour) : ""}
+          </span>
+        ))}
+      </div>
+
+      {weekdays.map((name, weekday) => (
+        <>
+          <span class="weekday">{name}</span>
+          <div class="row">
+            {hours.map((hour) => {
+              const count = byCell.get(`${weekday}-${hour}`) ?? 0;
+              const share = data.total > 0 ? (count / data.total) * 100 : 0;
+              return (
+                <button
+                  type="button"
+                  class="cell"
+                  style={`--i:${intensity(count).toFixed(3)}`}
+                  data-weekday={name}
+                  data-hour={hourLabel(hour)}
+                  data-count={count}
+                  data-share={share.toFixed(1)}
+                  aria-label={`${name} ${hourLabel(hour)}: ${count} taps`}
+                />
+              );
+            })}
+          </div>
+        </>
+      ))}
+    </div>
+  )}
+
+  <div class="chart-tooltip heatmap-tooltip" hidden aria-live="polite">
+    <p class="chart-tooltip-title"></p>
+    <dl class="chart-tooltip-stats"></dl>
+  </div>
+</figure>
+
+<script is:inline define:vars={{ heatmapId }}>
+  (() => {
+    const root = document.querySelector(`[data-heatmap="${heatmapId}"]`);
+    if (!root) return;
+    const tooltip = root.querySelector(".heatmap-tooltip");
+    const title = root.querySelector(".chart-tooltip-title");
+    const stats = root.querySelector(".chart-tooltip-stats");
+    const cells = root.querySelectorAll(".cell");
+
+    function show(cell) {
+      const weekday = cell.dataset.weekday;
+      const hour = cell.dataset.hour;
+      const count = Number(cell.dataset.count);
+      const share = cell.dataset.share;
+      title.textContent = `${weekday} · ${hour}`;
+      stats.replaceChildren();
+      const rows = [
+        ["Taps", String(count)],
+        ["Share of week", `${share}%`]
+      ];
+      for (const [label, value] of rows) {
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        stats.append(dt, dd);
+      }
+      tooltip.hidden = false;
+      const rootRect = root.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      const left = cellRect.left - rootRect.left + cellRect.width / 2;
+      const top = cellRect.top - rootRect.top - 8;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      const tipRect = tooltip.getBoundingClientRect();
+      if (tipRect.top < 8) {
+        tooltip.style.top = `${cellRect.top - rootRect.top + cellRect.height + 8}px`;
+        tooltip.dataset.flip = "below";
+      } else {
+        delete tooltip.dataset.flip;
+      }
+    }
+
+    function hide() {
+      tooltip.hidden = true;
+      for (const cell of cells) cell.classList.remove("active");
+    }
+
+    for (const cell of cells) {
+      cell.addEventListener("pointerenter", () => {
+        for (const other of cells) other.classList.remove("active");
+        cell.classList.add("active");
+        show(cell);
+      });
+      cell.addEventListener("focus", () => {
+        for (const other of cells) other.classList.remove("active");
+        cell.classList.add("active");
+        show(cell);
+      });
+      cell.addEventListener("pointerleave", hide);
+      cell.addEventListener("blur", hide);
+    }
+  })();
+</script>
+
+<style>
+  .heatmap-wrap {
+    position: relative;
+    margin: 0;
+  }
+
+  .heatmap {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 0.5rem;
+    align-items: center;
+  }
+
+  .corner {
+    grid-column: 1;
+  }
+
+  .hours-axis,
+  .row {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 2px;
+  }
+
+  .hour-tick {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: visible;
+  }
+
+  .weekday {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-align: right;
+    padding-right: 0.15rem;
+  }
+
+  .cell {
+    position: relative;
+    aspect-ratio: 1;
+    border: 0;
+    padding: 0;
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--success) calc(var(--i, 0) * 100%), oklch(0.28 0.006 265 / 0.35));
+    outline: 1px solid transparent;
+    cursor: default;
+    transition: outline-color 120ms ease, box-shadow 120ms ease;
+  }
+
+  .cell:hover,
+  .cell:focus-visible,
+  .cell.active {
+    outline-color: var(--border-strong);
+    box-shadow: 0 0 0 1px var(--border-strong);
+    z-index: 1;
+  }
+
+  .heatmap-tooltip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    min-width: 8.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface-3);
+    pointer-events: none;
+    box-shadow: var(--shadow-pop);
+    z-index: 2;
+  }
+
+  .heatmap-tooltip[data-flip="below"] {
+    transform: translate(-50%, 0.5rem);
+  }
+
+  .empty-line {
+    margin: 0;
+    padding: 0.6rem 0;
+    font-size: var(--text-sm);
+  }
+
+  @media (max-width: 560px) {
+    .hour-tick {
+      font-size: 0.5rem;
+    }
+    .weekday {
+      font-size: 0.6rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell {
+      transition: none;
+    }
+  }
+</style>

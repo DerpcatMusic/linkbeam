@@ -1,0 +1,26 @@
+---
+import AppLayout from "@layouts/AppLayout.astro";
+import Button from "@components/Button.astro";
+import Field from "@components/Field.astro";
+
+const next = Astro.url.searchParams.get("next") || "/admin";
+const hasError = Astro.url.searchParams.has("error");
+---
+
+<AppLayout title="Sign in" description="Sign in to Beamlink admin.">
+  <main class="admin-page auth-page">
+    <form class="admin-panel auth-panel" method="post" action="/api/admin/login">
+      <div>
+        <p class="eyebrow">Beamlink</p>
+        <h1>Sign in</h1>
+        <p class="muted">Use your admin password to manage links and analytics.</p>
+      </div>
+      {hasError && <p class="form-error" role="alert">That password did not match. Try again.</p>}
+      <input type="hidden" name="next" value={next} />
+      <Field label="Password" for="password">
+        <input id="password" name="password" type="password" autocomplete="current-password" required autofocus />
+      </Field>
+      <Button type="submit">Sign in</Button>
+    </form>
+  </main>
+</AppLayout>

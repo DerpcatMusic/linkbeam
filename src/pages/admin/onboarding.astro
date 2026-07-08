@@ -1,0 +1,697 @@
+---
+import AppLayout from "@layouts/AppLayout.astro";
+import Button from "@components/Button.astro";
+import Field from "@components/Field.astro";
+import {
+  getOnboardingStatus,
+  nextStepId,
+  ONBOARDING_STEPS,
+  previousStepId,
+  stepComplete,
+  stepIndex,
+  wranglerBindingsSnippet,
+  wranglerMigrationCommands,
+  wranglerResourceCommands,
+  wranglerSecretCommands,
+  type OnboardingStepId
+} from "@lib/onboarding";
+import { getMetaAccessToken, getMetaPixelId, getSetting } from "@lib/settings";
+import { getRuntimeEnv, publicBaseUrl, requireAdmin } from "@lib/runtime";
+
+const env = getRuntimeEnv(Astro);
+const blocked = await requireAdmin(Astro.request, env);
+if (blocked) return blocked;
+
+const baseUrl = publicBaseUrl(env, Astro.request).replace(/\/$/, "");
+const requestedStep = Astro.url.searchParams.get("step");
+const status = await getOnboardingStatus(env, {
+  step: requestedStep,
+  isDev: import.meta.env.DEV,
+  publicBaseUrl: baseUrl
+});
+
+const step = status.currentStep;
+const stepNumber = stepIndex(step) + 1;
+const totalSteps = ONBOARDING_STEPS.length;
+const prev = previousStepId(step);
+const next = nextStepId(step);
+
+const [metaPixelIdSetting, metaAccessToken] = await Promise.all([
+  getSetting(env, "meta_pixel_id"),
+  getMetaAccessToken(env)
+]);
+const envPixelId = await getMetaPixelId(env);
+
+const bindingsSnippet = wranglerBindingsSnippet({
+  publicBaseUrl: baseUrl || "https://links.example.com"
+});
+
+function checkLabel(ok: boolean, label: string): { ok: boolean; label: string } {
+  return { ok, label };
+}
+
+const resourceChecks = [
+  checkLabel(status.bindings.db, "D1 database (DB)"),
+  checkLabel(status.bindings.kv, "KV namespace (LINK_CACHE)"),
+  checkLabel(status.bindings.r2, "R2 bucket (ARTWORK)"),
+  checkLabel(status.bindings.queue, "Queue (CONVERSION_EVENTS)"),
+  checkLabel(status.bindings.analytics, "Analytics Engine (ANALYTICS)")
+];
+
+const secretChecks = [
+  {
+    ...checkLabel(status.secrets.metaPixelId, "META_PIXEL_ID"),
+    hint: "Enables Meta Pixel + CAPI event routing to your dataset."
+  },
+  {
+    ...checkLabel(status.secrets.metaAccessToken, "META_ACCESS_TOKEN"),
+    hint: "Server-side Conversions API — required for first-party attribution."
+  },
+  {
+    ...checkLabel(status.secrets.spotifyClientId, "SPOTIFY_CLIENT_ID"),
+    hint: "Optional. Full Spotify Web API import with ISRC metadata."
+  },
+  {
+    ...checkLabel(status.secrets.spotifyClientSecret, "SPOTIFY_CLIENT_SECRET"),
+    hint: "Optional. Pairs with client ID; without both, import uses oEmbed only."
+  }
+];
+
+function stepHref(stepId: OnboardingStepId): string {
+  return `/admin/onboarding?step=${stepId}`;
+}
+---
+
+<AppLayout title="Setup · Beamlink">
+  <main class="admin-page shell onboarding-page">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">Beamlink</p>
+        <h1>Self-host setup</h1>
+        <p class="lede muted">Configure Cloudflare resources, secrets, and your first link.</p>
+      </div>
+      {step !== "welcome" && (
+        <div class="admin-header-actions">
+          <Button variant="ghost" href="/admin">Exit to links</Button>
+        </div>
+      )}
+    </header>
+
+    <nav class="onboarding-progress" aria-label="Setup progress">
+      <ol>
+        {ONBOARDING_STEPS.map((item, index) => {
+          const done = stepComplete(status, item.id) || index < stepIndex(step);
+          const current = item.id === step;
+          return (
+            <li>
+              <a
+                class:list={["progress-step", { done, current }]}
+                href={stepHref(item.id)}
+                aria-current={current ? "step" : undefined}
+              >
+                <span class="progress-index tabular-nums">{index + 1}</span>
+                <span class="progress-label">{item.title}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+      <p class="progress-meta muted tabular-nums">Step {stepNumber} of {totalSteps}</p>
+    </nav>
+
+    {step === "welcome" && (
+      <section class="admin-panel onboarding-step">
+        <h2>What Beamlink needs</h2>
+        <p class="step-lede">
+          Beamlink runs entirely on Cloudflare Workers. You bring a Cloudflare account, wire up D1/KV/R2/Queues,
+          set Meta and optional Spotify secrets, then create smartlinks that fans open from ads.
+        </p>
+        <ul class="checklist">
+          <li>Cloudflare Worker with D1, KV, R2, and Queues bindings</li>
+          <li>D1 migrations applied (artists, tracks, links, settings)</li>
+          <li>Meta Pixel ID + CAPI access token for ad attribution</li>
+          <li>Cloudflare Access or password auth on <code>/admin</code></li>
+          <li>Optional Spotify API credentials for ISRC-rich imports</li>
+        </ul>
+        <p class="muted step-note">
+          Public base URL: <strong>{baseUrl || "Set PUBLIC_BASE_URL in wrangler.jsonc"}</strong>
+          {status.isDev && " · Local dev bypasses admin auth."}
+        </p>
+        <div class="form-actions">
+          <Button variant="accent" href={stepHref("resources")}>Start setup</Button>
+          <Button variant="ghost" id="skipWizard" type="button">Skip setup wizard</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "resources" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Cloudflare resources</h2>
+        <p class="step-lede">
+          Create the backing services, then paste IDs into <code>wrangler.jsonc</code>. Re-deploy after updating bindings.
+        </p>
+
+        <ul class="checklist status-checklist">
+          {resourceChecks.map((item) => (
+            <li class:list={[{ ok: item.ok }]}>
+              <span class="status-mark" aria-hidden="true">{item.ok ? "✓" : "○"}</span>
+              {item.label}
+            </li>
+          ))}
+        </ul>
+
+        <div class="code-block-wrap">
+          <div class="code-block-head">
+            <span class="code-block-title">Create resources</span>
+            <button class="button ghost sm copy-btn" type="button" data-copy-target="#resourceCommands">Copy</button>
+          </div>
+          <pre class="code-block" id="resourceCommands"><code>{wranglerResourceCommands()}</code></pre>
+        </div>
+
+        <div class="code-block-wrap">
+          <div class="code-block-head">
+            <span class="code-block-title">wrangler.jsonc bindings</span>
+            <button class="button ghost sm copy-btn" type="button" data-copy-target="#bindingsSnippet">Copy</button>
+          </div>
+          <pre class="code-block" id="bindingsSnippet"><code>{bindingsSnippet}</code></pre>
+        </div>
+
+        <p class="muted step-note">
+          Analytics Engine is optional but recommended for raw event points. Uncomment the
+          <code>analytics_engine_datasets</code> block after enabling it in your Cloudflare dashboard.
+        </p>
+
+        <div class="form-actions">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href={stepHref(next ?? "secrets")}>Continue</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "secrets" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Secrets &amp; tracking</h2>
+        <p class="step-lede">
+          Wrangler secrets are not editable in the UI. Set them via CLI, or save Meta values below (stored in D1 settings).
+        </p>
+
+        <ul class="checklist status-checklist">
+          {secretChecks.map((item) => (
+            <li class:list={[{ ok: item.ok }]}>
+              <span class="status-mark" aria-hidden="true">{item.ok ? "✓" : "○"}</span>
+              <span>
+                <strong>{item.label}</strong>
+                <span class="muted check-hint">{item.hint}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div class="code-block-wrap">
+          <div class="code-block-head">
+            <span class="code-block-title">Wrangler secrets</span>
+            <button class="button ghost sm copy-btn" type="button" data-copy-target="#secretCommands">Copy</button>
+          </div>
+          <pre class="code-block" id="secretCommands"><code>{wranglerSecretCommands()}</code></pre>
+        </div>
+
+        <form class="secrets-form" id="onboardingSecretsForm">
+          <Field label="Meta Pixel ID" for="metaPixelId" hint={envPixelId ? `Active: ${envPixelId}` : "Or set META_PIXEL_ID secret."}>
+            <input id="metaPixelId" name="metaPixelId" data-sensitive value={metaPixelIdSetting ?? ""} placeholder="1234567890" />
+          </Field>
+          <Field label="Meta CAPI access token" for="metaAccessToken" hint={metaAccessToken ? "Token configured. Leave blank to keep." : "Required for server-side events."}>
+            <input id="metaAccessToken" name="metaAccessToken" data-sensitive type="password" autocomplete="off" placeholder="Leave blank to keep current token" />
+          </Field>
+          <div class="form-actions">
+            <Button variant="secondary" type="submit">Save Meta settings</Button>
+            <p class="muted" id="secretsSaveStatus" aria-live="polite"></p>
+          </div>
+        </form>
+
+        <div class="form-actions step-nav">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href={stepHref(next ?? "database")}>Continue</Button>
+          <Button variant="ghost" class="skip-step" data-skip-step="secrets" type="button">Skip for now</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "database" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Database migrations</h2>
+        <p class="step-lede">
+          Apply SQL migrations to your D1 database. Local dev runs migrations automatically on <code>bun run dev</code>.
+        </p>
+
+        <div class={`tracking-status ${status.databaseMigrated ? "ok" : "warn"}`}>
+          <span class="dot" aria-hidden="true"></span>
+          <p>
+            {status.databaseMigrated
+              ? "Schema detected. Links and settings tables are ready."
+              : "Migrations not applied yet. Run the commands below against your D1 binding."}
+          </p>
+        </div>
+
+        <div class="code-block-wrap">
+          <div class="code-block-head">
+            <span class="code-block-title">Migration commands</span>
+            <button class="button ghost sm copy-btn" type="button" data-copy-target="#migrationCommands">Copy</button>
+          </div>
+          <pre class="code-block" id="migrationCommands"><code>{wranglerMigrationCommands()}</code></pre>
+        </div>
+
+        <p class="muted step-note">
+          Migrations live in <code>migrations/</code>. Re-run after pulling updates that add new SQL files.
+        </p>
+
+        <div class="form-actions">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href={stepHref(next ?? "auth")}>Continue</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "auth" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Admin authentication</h2>
+        <p class="step-lede">
+          Protect <code>/admin/*</code> before going to production. Cloudflare Access is recommended; password auth works as a fallback.
+        </p>
+
+        <ul class="checklist status-checklist">
+          <li class:list={[{ ok: status.auth.cloudflareAccess }]}>
+            <span class="status-mark" aria-hidden="true">{status.auth.cloudflareAccess ? "✓" : "○"}</span>
+            <span>
+              <strong>Cloudflare Access</strong>
+              <span class="muted check-hint">Set CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD secrets. Protect /admin/* in Zero Trust.</span>
+            </span>
+          </li>
+          <li class:list={[{ ok: status.auth.passwordAuth }]}>
+            <span class="status-mark" aria-hidden="true">{status.auth.passwordAuth ? "✓" : "○"}</span>
+            <span>
+              <strong>Password fallback</strong>
+              <span class="muted check-hint">ADMIN_PASSWORD_HASH (sha256 hex) + ADMIN_SESSION_SECRET for /admin/login.</span>
+            </span>
+          </li>
+          <li class:list={[{ ok: status.isDev }]}>
+            <span class="status-mark" aria-hidden="true">{status.isDev ? "✓" : "○"}</span>
+            <span>
+              <strong>Local dev bypass</strong>
+              <span class="muted check-hint">localhost and astro dev skip auth checks automatically.</span>
+            </span>
+          </li>
+        </ul>
+
+        <div class="code-block-wrap">
+          <div class="code-block-head">
+            <span class="code-block-title">Access secrets</span>
+            <button class="button ghost sm copy-btn" type="button" data-copy-target="#accessCommands">Copy</button>
+          </div>
+          <pre class="code-block" id="accessCommands"><code>{`wrangler secret put CF_ACCESS_TEAM_DOMAIN
+wrangler secret put CF_ACCESS_AUD
+
+# Password fallback (optional)
+# Hash: echo -n 'your-password' | sha256sum
+wrangler secret put ADMIN_PASSWORD_HASH
+wrangler secret put ADMIN_SESSION_SECRET`}</code></pre>
+        </div>
+
+        <p class="muted step-note">
+          In Cloudflare Zero Trust → Access → Applications, add a self-hosted app for <code>{baseUrl}/admin/*</code>
+          (or your worker route). Copy the application AUD tag into CF_ACCESS_AUD.
+        </p>
+
+        <div class="form-actions">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href={stepHref(next ?? "first-link")}>Continue</Button>
+          <Button variant="ghost" class="skip-step" data-skip-step="auth" type="button">Skip for now</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "first-link" && (
+      <section class="admin-panel onboarding-step">
+        <h2>First link</h2>
+        <p class="step-lede">
+          Import a track from Spotify, Apple Music, or TooLost, add destinations, and publish. Fans land on <code>/{`{slug}`}</code>.
+        </p>
+
+        <div class={`tracking-status ${status.linkCount > 0 ? "ok" : "muted"}`}>
+          <span class="dot" aria-hidden="true"></span>
+          <p>
+            {status.linkCount > 0
+              ? `${status.linkCount} link${status.linkCount === 1 ? "" : "s"} created.`
+              : "No links yet. The create flow walks through import → destinations → publish."}
+          </p>
+        </div>
+
+        <ol class="numbered-flow">
+          <li>Open <strong>New link</strong> and paste a streaming URL or ISRC</li>
+          <li>Confirm title, artist, and release date from import</li>
+          <li>Add platform destinations (Spotify, Apple Music, etc.)</li>
+          <li>Publish — the link goes live at your public base URL</li>
+        </ol>
+
+        <div class="form-actions">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href="/admin/links/new">Create first link</Button>
+          <Button variant="secondary" href={stepHref(next ?? "pixel")}>Continue</Button>
+          <Button variant="ghost" class="skip-step" data-skip-step="first-link" type="button">Skip for now</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "pixel" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Pixel health check</h2>
+        <p class="step-lede">
+          Send a test ViewContent event through the same CAPI pipeline your link pages use. Verify it in Meta Events Manager.
+        </p>
+
+        <div class={`tracking-status ${status.capiConfigured ? "ok" : "warn"}`}>
+          <span class="dot" aria-hidden="true"></span>
+          <p>
+            {status.capiConfigured
+              ? "CAPI configured. Ready to send a test event."
+              : "Set Meta Pixel ID and access token first (Secrets step or Settings)."}
+          </p>
+        </div>
+
+        <div class="form-actions">
+          <Button variant="accent" id="testPixel" type="button" disabled={!status.capiConfigured}>Send test event</Button>
+          <Button variant="secondary" href="/admin/settings">Open settings</Button>
+        </div>
+        <p class="muted" id="pixelTestStatus" aria-live="polite"></p>
+
+        <p class="muted step-note">
+          API endpoint: <code>POST /api/admin/test-pixel</code> — same handler the Settings page uses.
+        </p>
+
+        <div class="form-actions step-nav">
+          {prev && <Button variant="secondary" href={stepHref(prev)}>Back</Button>}
+          <Button variant="accent" href={stepHref(next ?? "complete")}>Continue</Button>
+          <Button variant="ghost" class="skip-step" data-skip-step="pixel" type="button">Skip for now</Button>
+        </div>
+      </section>
+    )}
+
+    {step === "complete" && (
+      <section class="admin-panel onboarding-step">
+        <h2>Setup complete</h2>
+        <p class="step-lede">
+          Beamlink is configured. Create links, wire them into Meta campaigns, and check analytics daily to steer spend.
+        </p>
+
+        <div class="metric-strip">
+          <div class="metric">
+            <span class="label">Links</span>
+            <span class="value tabular-nums">{status.linkCount}</span>
+          </div>
+          <div class="metric">
+            <span class="label">CAPI</span>
+            <span class={`value ${status.capiConfigured ? "success" : ""}`}>{status.capiConfigured ? "On" : "Off"}</span>
+          </div>
+          <div class="metric">
+            <span class="label">Spotify API</span>
+            <span class="value">{status.secrets.spotifyClientId && status.secrets.spotifyClientSecret ? "On" : "oEmbed"}</span>
+          </div>
+          <div class="metric">
+            <span class="label">Auth</span>
+            <span class="value">{status.auth.configured ? "Ready" : "Review"}</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <Button variant="accent" id="finishWizard" type="button">Go to links</Button>
+          <Button variant="secondary" href="/admin/settings">Tracking settings</Button>
+        </div>
+      </section>
+    )}
+  </main>
+
+  <script is:inline define:vars={{ step }}>
+    const saveStep = async (payload) => {
+      await fetch("/api/admin/onboarding", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    };
+
+    for (const button of document.querySelectorAll(".copy-btn")) {
+      button.addEventListener("click", async () => {
+        const target = document.querySelector(button.dataset.copyTarget);
+        if (!target) return;
+        const text = target.textContent ?? "";
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = button.textContent;
+          button.textContent = "Copied";
+          setTimeout(() => {
+            button.textContent = original;
+          }, 1200);
+        } catch {
+          button.textContent = "Select & copy";
+        }
+      });
+    }
+
+    for (const button of document.querySelectorAll(".skip-step")) {
+      button.addEventListener("click", async () => {
+        const skipStep = button.dataset.skipStep;
+        await saveStep({ skipStep });
+        const steps = ["welcome", "resources", "secrets", "database", "auth", "first-link", "pixel", "complete"];
+        const index = steps.indexOf(skipStep);
+        const nextStep = steps[index + 1] ?? "complete";
+        window.location.href = `/admin/onboarding?step=${nextStep}`;
+      });
+    }
+
+    const skipWizard = document.querySelector("#skipWizard");
+    skipWizard?.addEventListener("click", async () => {
+      await saveStep({ skipWizard: true });
+      window.location.href = "/admin";
+    });
+
+    const secretsForm = document.querySelector("#onboardingSecretsForm");
+    const secretsSaveStatus = document.querySelector("#secretsSaveStatus");
+    secretsForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      secretsSaveStatus.textContent = "Saving…";
+      const response = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          metaPixelId: document.querySelector("#metaPixelId")?.value.trim() ?? "",
+          metaAccessToken: document.querySelector("#metaAccessToken")?.value.trim() ?? ""
+        })
+      });
+      const data = await response.json();
+      secretsSaveStatus.textContent = response.ok ? "Saved." : data.error || "Save failed.";
+      if (response.ok) window.location.reload();
+    });
+
+    const testPixel = document.querySelector("#testPixel");
+    const pixelTestStatus = document.querySelector("#pixelTestStatus");
+    testPixel?.addEventListener("click", async () => {
+      pixelTestStatus.textContent = "Sending test event…";
+      const response = await fetch("/api/admin/test-pixel", { method: "POST" });
+      const data = await response.json();
+      pixelTestStatus.textContent = response.ok
+        ? `Test ${data.status}. Event ${data.eventId}. Trace: ${data.metaTraceId ?? "n/a"}`
+        : data.error || "Test failed.";
+    });
+
+    const finishWizard = document.querySelector("#finishWizard");
+    finishWizard?.addEventListener("click", async () => {
+      await saveStep({ completed: true, step: "complete" });
+      window.location.href = "/admin";
+    });
+
+    saveStep({ step });
+  </script>
+</AppLayout>
+
+<style>
+  .onboarding-page {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .onboarding-progress ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .progress-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .progress-step:hover {
+    border-color: var(--border-strong);
+    color: var(--foreground);
+  }
+
+  .progress-step.current {
+    border-color: var(--accent);
+    color: var(--foreground);
+    background: var(--accent-soft);
+  }
+
+  .progress-step.done {
+    color: var(--foreground);
+  }
+
+  .progress-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-meta {
+    margin: 0.35rem 0 0;
+    font-size: var(--text-xs);
+  }
+
+  .onboarding-step h2 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  .step-lede {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--muted);
+    max-width: var(--prose-width);
+    line-height: 1.55;
+  }
+
+  .step-note {
+    margin: 0;
+    font-size: var(--text-sm);
+    max-width: var(--prose-width);
+  }
+
+  .checklist {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: var(--text-sm);
+    max-width: var(--prose-width);
+  }
+
+  .status-checklist {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .status-checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--muted);
+  }
+
+  .status-checklist li.ok {
+    color: var(--foreground);
+  }
+
+  .status-checklist li.ok .status-mark {
+    color: var(--success);
+  }
+
+  .status-mark {
+    flex-shrink: 0;
+    width: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .check-hint {
+    display: block;
+    font-size: var(--text-xs);
+    margin-top: 0.1rem;
+  }
+
+  .code-block-wrap {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .code-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .code-block-title {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .code-block {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--inset);
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  .secrets-form {
+    display: grid;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .numbered-flow {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: var(--text-sm);
+    max-width: var(--prose-width);
+  }
+
+  .step-nav {
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .progress-label {
+      display: none;
+    }
+
+    .progress-step.current .progress-label {
+      display: inline;
+    }
+  }
+</style>

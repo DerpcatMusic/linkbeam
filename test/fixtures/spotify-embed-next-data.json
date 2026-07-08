@@ -1,0 +1,28 @@
+{
+  "props": {
+    "pageProps": {
+      "state": {
+        "data": {
+          "entity": {
+            "type": "track",
+            "name": "Mr. Brightside",
+            "title": "Mr. Brightside",
+            "artists": [{ "name": "The Killers" }],
+            "releaseDate": { "isoString": "2004-06-15T00:00:00Z" },
+            "visualIdentity": {
+              "backgroundBase": { "alpha": 255, "blue": 146, "green": 83, "red": 26 },
+              "backgroundTintedBase": { "alpha": 255, "blue": 106, "green": 47, "red": 0 },
+              "textBase": { "alpha": 255, "blue": 255, "green": 255, "red": 255 },
+              "textBrightAccent": { "alpha": 255, "blue": 255, "green": 255, "red": 255 },
+              "textSubdued": { "alpha": 255, "blue": 255, "green": 210, "red": 163 },
+              "image": [
+                { "url": "https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02ccdddd46119a4ff53eaf1f5d", "maxHeight": 300, "maxWidth": 300 },
+                { "url": "https://image-cdn-ak.spotifycdn.com/image/ab67616d0000b273ccdddd46119a4ff53eaf1f5d", "maxHeight": 640, "maxWidth": 640 }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

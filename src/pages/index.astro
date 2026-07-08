@@ -1,0 +1,298 @@
+---
+import MarketingLayout from "@layouts/MarketingLayout.astro";
+import { ensureDemoSmartLink } from "@lib/demo-link";
+import { getRuntimeEnv } from "@lib/runtime";
+
+const githubUrl = "https://github.com/DerpcatMusic/beamlink";
+const docsUrl = "https://github.com/DerpcatMusic/beamlink#setup";
+const demoLink = await ensureDemoSmartLink(getRuntimeEnv(Astro));
+const demoHref = `/${demoLink.slug}`;
+const demoDisplayUrl = `${Astro.url.host}/${demoLink.slug}`;
+
+const does = [
+  {
+    title: "Loads before they scroll away",
+    body: "The page is plain HTML from Cloudflare's edge, so the buttons are tappable almost instantly. Fans coming off an ad on their phone don't sit staring at a spinner.",
+    icon: "bolt"
+  },
+  {
+    title: "Tracks from your side, not the browser's",
+    body: "Taps get sent to Meta from your own domain, server-side. That means cleaner matching than a browser pixel, and no cookie banner in the way.",
+    icon: "signal"
+  },
+  {
+    title: "All of it is yours",
+    body: "Your Cloudflare account, your database, your domain. Read the code, change it, host it. Nothing phones home to us because there is no us to phone.",
+    icon: "key"
+  }
+];
+
+const compare = [
+  {
+    label: "The page",
+    us: "Plain HTML, nothing to load first, no cookie banner",
+    them: "Hosted page that loads its own scripts before the links"
+  },
+  {
+    label: "Tracking",
+    us: "Sent from your domain, server-side, so Meta can match it",
+    them: "Browser pixel doing best-effort matching"
+  },
+  {
+    label: "Who owns it",
+    us: "You do. The account, the database, the domain.",
+    them: "The vendor does, and rents it back to you"
+  },
+  {
+    label: "Price",
+    us: "Free. Cloudflare's free tier covers most catalogs.",
+    them: "Monthly, or per click"
+  }
+];
+---
+
+<MarketingLayout title="Beamlink — one fast link for your music release">
+  <header class="m-nav">
+    <div class="m-shell m-nav-inner">
+      <a class="m-logo" href="/" aria-label="Beamlink home">
+        <span class="m-logo-mark" aria-hidden="true"></span>
+        beamlink
+      </a>
+      <nav class="m-nav-links" aria-label="Primary">
+        <a href="#does">What it does</a>
+        <a href="#why">Why us</a>
+        <a href="#run">Run it yourself</a>
+        <a href="/admin">Admin</a>
+        <a class="m-btn m-btn-secondary" href={githubUrl} target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="m-hero">
+      <div class="m-shell m-hero-grid">
+        <div class="m-hero-copy" data-reveal>
+          <span class="m-announce">
+            <span class="m-announce-tag">free</span>
+            Open source, runs on your own Cloudflare
+          </span>
+
+          <h1 class="m-display">One link for your release.</h1>
+
+          <p class="m-lede">
+            Paste a Spotify link and get a fast page that sends fans wherever they
+            listen. It quietly tells Meta what happened, so your ads learn who to
+            chase. That's the whole thing.
+          </p>
+
+          <div class="m-hero-actions">
+            <a class="m-btn m-btn-beam" href={githubUrl} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+              Grab the code
+            </a>
+            <a class="m-btn m-btn-secondary" href="/admin">Poke around the admin</a>
+          </div>
+
+          <div class="m-hero-meta">
+            <span>Loads in ~150ms</span>
+            <span>No cookie banner</span>
+            <span>MIT licensed</span>
+          </div>
+        </div>
+
+        <!-- Embedded working smartlink example -->
+        <div class="m-release-stage" data-reveal>
+          <div class="m-live-shell">
+            <div class="m-live-browser" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <b>{demoDisplayUrl}</b>
+            </div>
+            <iframe
+              class="m-live-frame"
+              data-live-frame
+              src={`${demoHref}?embed=1`}
+              title="Embedded Beamlink smartlink demo"
+              loading="eager"
+            ></iframe>
+          </div>
+          <a class="m-live-open" href={demoHref} target="_blank" rel="noopener noreferrer">Open the live shortlink</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHAT IT DOES ============ -->
+    <section class="m-section" id="does">
+      <div class="m-shell">
+        <div class="m-section-head" data-reveal>
+          <h2 class="m-h2">Three things, done well.</h2>
+          <p class="m-sub">Built for one job: getting a fan from your ad to the play button, and keeping the tracking honest.</p>
+        </div>
+
+        <div class="m-steps" data-reveal>
+          {does.map((item) => (
+            <article class="m-step m-step--plain">
+              <span class="m-step-line" aria-hidden="true">
+                {item.icon === "bolt" && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>
+                )}
+                {item.icon === "signal" && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 7-7M5 12a7 7 0 0 0 7 7"/><path d="M2 12a10 10 0 0 1 10-10M2 12a10 10 0 0 0 10 10"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+                )}
+                {item.icon === "key" && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5"/><path d="m11.5 11.5 8 8M16 16l2-2M19 19l2-2"/></svg>
+                )}
+              </span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHY US ============ -->
+    <section class="m-section" id="why">
+      <div class="m-shell">
+        <div class="m-section-head" data-reveal>
+          <h2 class="m-h2">We're the free, open-source option.</h2>
+          <p class="m-sub">
+            Linkfire, Hypeddit and Feature.fm do this too, and their campaign tools
+            are genuinely nice. If you want those, go use them. If you just want a
+            fast link and clean tracking on stuff you own, here's the honest
+            difference.
+          </p>
+        </div>
+
+        <div class="m-compare" data-reveal>
+          <div class="m-compare-head" aria-hidden="true">
+            <span></span>
+            <span class="is-us">Beamlink</span>
+            <span class="is-them">The paid ones</span>
+          </div>
+          {compare.map((row) => (
+            <div class="m-compare-row">
+              <span>{row.label}</span>
+              <p class="m-us">
+                <svg class="m-check" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>
+                {row.us}
+              </p>
+              <p class="m-them">{row.them}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RUN IT YOURSELF ============ -->
+    <section class="m-section" id="run">
+      <div class="m-shell m-selfhost">
+        <div data-reveal>
+          <h2 class="m-h2">Yours in an afternoon.</h2>
+          <ul class="m-selfhost-list">
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Bring your own Cloudflare account, D1 database, and KV.</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>Point a domain, drop in your Meta pixel and token once.</li>
+            <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>That's it. No per-click bill, no gate builder, no made-up numbers.</li>
+          </ul>
+          <div class="m-hero-actions">
+            <a class="m-btn m-btn-beam" href={githubUrl} target="_blank" rel="noopener noreferrer">Fork it on GitHub</a>
+            <a class="m-btn m-btn-secondary" href={docsUrl} target="_blank" rel="noopener noreferrer">Read the setup</a>
+          </div>
+        </div>
+
+        <div class="m-terminal" data-reveal>
+          <div class="m-terminal-bar" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span>~/beamlink</span>
+          </div>
+          <pre class="m-code"><code><span class="m-comment"># clone it and boot the local edge</span>
+<span class="m-prompt">$</span> git clone https://github.com/DerpcatMusic/beamlink
+<span class="m-prompt">$</span> cd beamlink && bun install
+<span class="m-prompt">$</span> wrangler d1 migrations apply DB --local
+<span class="m-prompt">$</span> bun run dev
+<span class="m-comment">➜ running at http://localhost:4321</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="m-section">
+      <div class="m-shell">
+        <div class="m-cta" data-reveal>
+          <h2>That's the whole pitch.</h2>
+          <p>Free, open source, fast. Clone it and put your next release on it.</p>
+          <div class="m-cta-actions">
+            <a class="m-btn m-btn-beam" href={githubUrl} target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-1.8c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+              Grab the code
+            </a>
+            <a class="m-btn m-btn-secondary" href="/admin">Open the admin</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="m-footer">
+    <div class="m-shell m-footer-inner">
+      <a class="m-footer-brand" href="/">
+        <span class="m-logo-mark" aria-hidden="true"></span>
+        beamlink
+      </a>
+      <nav aria-label="Footer">
+        <a href={githubUrl} target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href={docsUrl} target="_blank" rel="noopener noreferrer">Setup</a>
+        <a href="/admin">Admin</a>
+      </nav>
+      <span class="m-footer-note">MIT · GitHub</span>
+    </div>
+  </footer>
+
+  <script is:inline>
+    (() => {
+      const frame = document.querySelector("[data-live-frame]");
+      if (!(frame instanceof HTMLIFrameElement)) return;
+
+      let observer;
+      const resize = () => {
+        try {
+          const doc = frame.contentDocument;
+          if (!doc) return;
+          const body = doc.body;
+          const root = doc.documentElement;
+          const height = Math.max(
+            body?.scrollHeight ?? 0,
+            body?.offsetHeight ?? 0,
+            root?.scrollHeight ?? 0,
+            root?.offsetHeight ?? 0
+          );
+          if (height > 0) frame.style.height = `${height}px`;
+        } catch {
+          // Same-origin demo iframe should be readable; keep CSS fallback otherwise.
+        }
+      };
+
+      const observe = () => {
+        resize();
+        try {
+          observer?.disconnect();
+          const doc = frame.contentDocument;
+          if (!doc) return;
+          observer = new ResizeObserver(resize);
+          observer.observe(doc.documentElement);
+          if (doc.body) observer.observe(doc.body);
+          doc.fonts?.ready?.then(resize).catch(() => {});
+        } catch {
+          // Leave the fallback height in place.
+        }
+      };
+
+      frame.addEventListener("load", observe);
+      window.addEventListener("resize", resize, { passive: true });
+      observe();
+    })();
+  </script>
+</MarketingLayout>

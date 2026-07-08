@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+.dev.vars
+.dev.vars.*
+.claude/
+.impeccable/
+.preview-screenshots/
+test-results/

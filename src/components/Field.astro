@@ -1,0 +1,24 @@
+---
+interface Props {
+  label: string;
+  for?: string;
+  hint?: string;
+  class?: string;
+}
+
+const { label, for: htmlFor, hint, class: className = "" } = Astro.props;
+---
+
+<div class={["field", className].filter(Boolean).join(" ")}>
+  <label for={htmlFor}>{label}</label>
+  <slot />
+  {hint && <p class="field-hint muted">{hint}</p>}
+</div>
+
+<style>
+  .field-hint {
+    margin: 0;
+    font-size: var(--beamlink-text-xs);
+    color: var(--beamlink-muted);
+  }
+</style>

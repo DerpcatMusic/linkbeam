@@ -1,0 +1,17 @@
+---
+import AdminLayout from "./AdminLayout.astro";
+import type { LayoutHeadProps } from "./BaseLayout.astro";
+
+export type { LayoutHeadProps };
+
+interface Props extends LayoutHeadProps {
+  bodyClass?: string;
+  fullWidth?: boolean;
+}
+
+const props = Astro.props;
+---
+
+<AdminLayout {...props}>
+  <slot />
+</AdminLayout>

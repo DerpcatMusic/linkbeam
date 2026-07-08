@@ -1,0 +1,63 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "beamlink",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-06-15",
+  "workers_dev": true,
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "beamlink",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "LINK_CACHE",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARTWORK",
+      "bucket_name": "beamlink-artwork"
+    }
+  ],
+  // Enable this after the Cloudflare account has Workers Analytics Engine turned on:
+  // https://dash.cloudflare.com/7b1754c3aa01004ab13db4fa75f25a45/workers/analytics-engine
+  // "analytics_engine_datasets": [
+  //   {
+  //     "binding": "ANALYTICS",
+  //     "dataset": "beamlink_events"
+  //   }
+  // ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "CONVERSION_EVENTS",
+        "queue": "beamlink-conversions"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "beamlink-conversions",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "beamlink-conversions-dlq"
+      }
+    ]
+  },
+  "vars": {
+    "PUBLIC_BASE_URL": "",
+    "META_API_VERSION": "v23.0",
+    "META_TEST_EVENT_CODE": "",
+    // Relative optimization value per streaming conversion (enables value-based
+    // bidding + value-weighted lookalikes). Not literal revenue — tune freely.
+    "META_CONVERSION_VALUE": "1",
+    "META_CURRENCY": "USD"
+  }
+}

@@ -1,0 +1,421 @@
+---
+import type { TimeseriesPoint } from "@lib/stats";
+import { buildDualSeriesChart } from "@lib/stats";
+
+interface Props {
+  series: TimeseriesPoint[];
+  width?: number;
+  height?: number;
+  ariaLabel: string;
+  labelFormat?: "day" | "hour";
+  viewsLabel?: string;
+  clicksLabel?: string;
+  showDelta?: boolean;
+}
+
+const {
+  series,
+  width = 640,
+  height = 240,
+  ariaLabel,
+  labelFormat = "day",
+  viewsLabel = "Views",
+  clicksLabel = "Clicks",
+  showDelta = true
+} = Astro.props;
+const chart = buildDualSeriesChart(series, { width, height, labelFormat });
+const chartId = `chart-${Math.random().toString(36).slice(2, 9)}`;
+const plotRight = chart.width - chart.padding.right;
+const plotBottom = chart.height - chart.padding.bottom;
+const markerPayload = chart.markers.map((marker) => ({
+  x: marker.x,
+  viewsY: marker.viewsY,
+  clicksY: marker.clicksY,
+  label: marker.label,
+  views: marker.views,
+  clicks: marker.clicks,
+  presaves: marker.presaves,
+  tapRate: marker.tapRate,
+  deltaViews: marker.deltaViews,
+  deltaClicks: marker.deltaClicks,
+  priorViews: marker.priorViews,
+  priorClicks: marker.priorClicks
+}));
+---
+
+<figure class="chart-wrap" data-chart={chartId} tabindex="0" aria-label={ariaLabel}>
+  <svg
+    class="chart"
+    viewBox={`0 0 ${chart.width} ${chart.height}`}
+    width="100%"
+    height={chart.height}
+    role="img"
+    aria-hidden="true"
+  >
+    {chart.yTicks.map((tick) => (
+      <g>
+        <line
+          class="grid"
+          x1={chart.padding.left}
+          x2={plotRight}
+          y1={tick.y}
+          y2={tick.y}
+        />
+        <text class="axis y" x={chart.padding.left - 6} y={tick.y + 3} text-anchor="end">
+          {tick.label}
+        </text>
+      </g>
+    ))}
+
+    <path class="area views" d={chart.viewsArea} />
+    <path class="area clicks" d={chart.clicksArea} />
+    <path class="line views" d={chart.viewsLine} />
+    <path class="line clicks" d={chart.clicksLine} />
+
+    <line
+      class="crosshair"
+      x1={chart.padding.left}
+      x2={chart.padding.left}
+      y1={chart.padding.top}
+      y2={plotBottom}
+      visibility="hidden"
+    />
+    <circle class="hover-dot views" r="4" visibility="hidden" />
+    <circle class="hover-dot clicks" r="4" visibility="hidden" />
+
+    <rect
+      class="plot-hit"
+      x={chart.padding.left}
+      y={chart.padding.top}
+      width={chart.plotWidth}
+      height={chart.plotHeight}
+      fill="transparent"
+    />
+
+    {chart.xTicks.map((tick) => (
+      <text class="axis x" x={tick.x} y={chart.height - 8} text-anchor="middle">
+        {tick.label}
+      </text>
+    ))}
+  </svg>
+
+  <div class="legend" aria-hidden="true">
+    <span class="legend-item views">{viewsLabel}</span>
+    <span class="legend-item clicks">{clicksLabel}</span>
+  </div>
+
+  <div class="chart-tooltip" hidden aria-live="polite">
+    <p class="chart-tooltip-title"></p>
+    <dl class="chart-tooltip-stats"></dl>
+  </div>
+</figure>
+
+<script is:inline define:vars={{ chartId, viewsLabel, clicksLabel, showDelta, markerPayload, chartWidth: chart.width, chartHeight: chart.height, padding: chart.padding }}>
+  (() => {
+    const root = document.querySelector(`[data-chart="${chartId}"]`);
+    if (!root || markerPayload.length === 0) return;
+
+    const svg = root.querySelector(".chart");
+    const plotHit = root.querySelector(".plot-hit");
+    const crosshair = root.querySelector(".crosshair");
+    const dotViews = root.querySelector(".hover-dot.views");
+    const dotClicks = root.querySelector(".hover-dot.clicks");
+    const tooltip = root.querySelector(".chart-tooltip");
+    const tooltipTitle = root.querySelector(".chart-tooltip-title");
+    const tooltipStats = root.querySelector(".chart-tooltip-stats");
+
+    let activeIndex = -1;
+
+    function formatDelta(delta, prior) {
+      if (delta === null || prior === null) return null;
+      if (delta === 0) return "±0";
+      const sign = delta > 0 ? "+" : "";
+      const pct = prior > 0 ? (delta / prior) * 100 : null;
+      const pctPart = pct !== null ? ` / ${sign}${pct.toFixed(1)}%` : "";
+      return `${sign}${delta}${pctPart}`;
+    }
+
+    function formatTapRate(rate) {
+      return rate > 0 ? `${(rate * 100).toFixed(1)}%` : "—";
+    }
+
+    function renderTooltip(marker) {
+      tooltipTitle.textContent = marker.label;
+      const rows = [
+        [viewsLabel, String(marker.views)],
+        [clicksLabel, String(marker.clicks)],
+        ["Tap rate", formatTapRate(marker.tapRate)]
+      ];
+      if (marker.presaves > 0) {
+        rows.push(["Pre-saves", String(marker.presaves)]);
+      }
+      if (showDelta) {
+        const viewDelta = formatDelta(marker.deltaViews, marker.priorViews);
+        const clickDelta = formatDelta(marker.deltaClicks, marker.priorClicks);
+        if (viewDelta) rows.push(["vs prior · views", viewDelta]);
+        if (clickDelta) rows.push(["vs prior · taps", clickDelta]);
+      }
+      tooltipStats.replaceChildren();
+      for (const [label, value] of rows) {
+        const dt = document.createElement("dt");
+        dt.textContent = label;
+        const dd = document.createElement("dd");
+        dd.textContent = value;
+        tooltipStats.append(dt, dd);
+      }
+    }
+
+    function positionTooltip(svgX) {
+      const rect = root.getBoundingClientRect();
+      const scale = rect.width / chartWidth;
+      const left = svgX * scale;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${padding.top * scale - 8}px`;
+
+      const tipRect = tooltip.getBoundingClientRect();
+      const viewportPad = 8;
+      if (tipRect.left < viewportPad) {
+        tooltip.style.left = `${left + (viewportPad - tipRect.left)}px`;
+      } else if (tipRect.right > window.innerWidth - viewportPad) {
+        tooltip.style.left = `${left - (tipRect.right - window.innerWidth + viewportPad)}px`;
+      }
+      if (tipRect.top < viewportPad) {
+        tooltip.style.top = `${padding.top * scale + 24}px`;
+        tooltip.dataset.flip = "below";
+      } else {
+        delete tooltip.dataset.flip;
+      }
+    }
+
+    function showIndex(index) {
+      if (index < 0 || index >= markerPayload.length) return;
+      activeIndex = index;
+      const marker = markerPayload[index];
+      crosshair.setAttribute("visibility", "visible");
+      crosshair.setAttribute("x1", String(marker.x));
+      crosshair.setAttribute("x2", String(marker.x));
+      dotViews.setAttribute("visibility", "visible");
+      dotViews.setAttribute("cx", String(marker.x));
+      dotViews.setAttribute("cy", String(marker.viewsY));
+      dotClicks.setAttribute("visibility", "visible");
+      dotClicks.setAttribute("cx", String(marker.x));
+      dotClicks.setAttribute("cy", String(marker.clicksY));
+      renderTooltip(marker);
+      tooltip.hidden = false;
+      positionTooltip(marker.x);
+    }
+
+    function hide() {
+      activeIndex = -1;
+      crosshair.setAttribute("visibility", "hidden");
+      dotViews.setAttribute("visibility", "hidden");
+      dotClicks.setAttribute("visibility", "hidden");
+      tooltip.hidden = true;
+    }
+
+    function svgXFromClient(clientX) {
+      const rect = svg.getBoundingClientRect();
+      const scale = chartWidth / rect.width;
+      return (clientX - rect.left) * scale;
+    }
+
+    function indexFromSvgX(svgX) {
+      let nearest = 0;
+      let minDist = Infinity;
+      for (let i = 0; i < markerPayload.length; i += 1) {
+        const dist = Math.abs(markerPayload[i].x - svgX);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = i;
+        }
+      }
+      return nearest;
+    }
+
+    plotHit.addEventListener("pointermove", (event) => {
+      const index = indexFromSvgX(svgXFromClient(event.clientX));
+      if (index !== activeIndex) showIndex(index);
+      else positionTooltip(markerPayload[index].x);
+    });
+
+    plotHit.addEventListener("pointerleave", hide);
+
+    root.addEventListener("keydown", (event) => {
+      if (markerPayload.length === 0) return;
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        const next = activeIndex < 0
+          ? (event.key === "ArrowLeft" ? markerPayload.length - 1 : 0)
+          : Math.max(0, Math.min(markerPayload.length - 1, activeIndex + (event.key === "ArrowRight" ? 1 : -1)));
+        showIndex(next);
+      }
+      if (event.key === "Escape") hide();
+    });
+  })();
+</script>
+
+<style>
+  .chart-wrap {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    outline: none;
+  }
+
+  .chart-wrap:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--radius-sm);
+  }
+
+  .chart {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    display: block;
+  }
+
+  .grid {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .axis {
+    fill: var(--faint);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .area.views {
+    fill: var(--accent-soft);
+  }
+
+  .area.clicks {
+    fill: var(--success-soft);
+  }
+
+  .line.views {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .line.clicks {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .crosshair {
+    stroke: var(--border-strong);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+
+  .hover-dot {
+    pointer-events: none;
+    stroke: var(--surface);
+    stroke-width: 2;
+    transition: opacity 120ms ease;
+  }
+
+  .hover-dot.views {
+    fill: var(--accent);
+  }
+
+  .hover-dot.clicks {
+    fill: var(--success);
+  }
+
+  .plot-hit {
+    cursor: crosshair;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1rem;
+    font-size: var(--text-xs);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .legend-item::before {
+    content: "";
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.35rem;
+    border-radius: var(--radius-pill);
+    vertical-align: middle;
+  }
+
+  .legend-item.views::before {
+    background: var(--accent);
+  }
+
+  .legend-item.clicks::before {
+    background: var(--success);
+  }
+
+  .chart-tooltip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    min-width: 9.5rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface-3);
+    color: var(--foreground);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    box-shadow: var(--shadow-pop);
+    z-index: 2;
+    transition: opacity 120ms ease;
+  }
+
+  .chart-tooltip[data-flip="below"] {
+    transform: translate(-50%, 0.5rem);
+  }
+
+  .chart-tooltip-title {
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--foreground);
+  }
+
+  .chart-tooltip-stats {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.15rem 0.65rem;
+    margin: 0;
+  }
+
+  .chart-tooltip-stats dt {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .chart-tooltip-stats dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .crosshair,
+    .hover-dot,
+    .chart-tooltip {
+      transition: none;
+    }
+  }
+</style>

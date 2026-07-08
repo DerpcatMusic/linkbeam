@@ -1,0 +1,123 @@
+---
+interface Tab {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  groupId: string;
+  tabs: Tab[];
+  activeId: string;
+}
+
+const { groupId, tabs, activeId } = Astro.props;
+---
+
+<div class="analytics-tabs" data-tab-group={groupId}>
+  <div class="tab-list" role="tablist" aria-label="Breakdown categories">
+    {tabs.map((tab) => (
+      <button
+        type="button"
+        class:list={["tab-chip", tab.id === activeId && "active"]}
+        role="tab"
+        id={`${groupId}-tab-${tab.id}`}
+        aria-selected={tab.id === activeId ? "true" : "false"}
+        aria-controls={`${groupId}-panel-${tab.id}`}
+        data-tab={tab.id}
+        tabindex={tab.id === activeId ? 0 : -1}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+  <slot />
+</div>
+
+<script is:inline define:vars={{ groupId }}>
+  (() => {
+    const root = document.querySelector(`[data-tab-group="${groupId}"]`);
+    if (!root) return;
+    const tabs = [...root.querySelectorAll('[role="tab"]')];
+    const panels = [...root.querySelectorAll("[data-tab-panel]")];
+
+    function activate(tabId) {
+      for (const tab of tabs) {
+        const selected = tab.dataset.tab === tabId;
+        tab.classList.toggle("active", selected);
+        tab.setAttribute("aria-selected", selected ? "true" : "false");
+        tab.tabIndex = selected ? 0 : -1;
+      }
+      for (const panel of panels) {
+        const show = panel.dataset.tabPanel === tabId;
+        panel.hidden = !show;
+      }
+    }
+
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => activate(tab.dataset.tab));
+      tab.addEventListener("keydown", (event) => {
+        const index = tabs.indexOf(tab);
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          const next = tabs[(index + 1) % tabs.length];
+          next.focus();
+          activate(next.dataset.tab);
+        }
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          const prev = tabs[(index - 1 + tabs.length) % tabs.length];
+          prev.focus();
+          activate(prev.dataset.tab);
+        }
+      });
+    }
+  })();
+</script>
+
+<style>
+  .analytics-tabs {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .tab-list {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.15rem;
+    padding: 0.2rem;
+    border-radius: var(--radius);
+    background: var(--inset);
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .tab-chip {
+    min-height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    border: 0;
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.65rem;
+    background: transparent;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+  }
+
+  .tab-chip:hover {
+    color: var(--foreground);
+  }
+
+  .tab-chip.active {
+    background: var(--surface-2);
+    color: var(--foreground);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tab-chip:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 1px;
+  }
+</style>

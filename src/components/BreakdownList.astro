@@ -1,0 +1,53 @@
+---
+import PlatformIcon from "@components/PlatformIcon.astro";
+import type { Platform } from "@lib/types";
+
+export interface BreakdownRow {
+  label: string;
+  count: number;
+  share: number;
+  platform?: Platform;
+  brandColor?: string;
+}
+
+interface Props {
+  rows: BreakdownRow[];
+  empty?: string;
+  limit?: number;
+  sensitive?: boolean;
+}
+
+const { rows, empty = "No data yet.", limit = 8, sensitive = false } = Astro.props;
+const visible = rows.slice(0, limit);
+const maxCount = visible[0]?.count ?? 1;
+---
+
+{visible.length === 0 ? (
+  <p class="muted empty-line">{empty}</p>
+) : (
+  <div class="data-list">
+    {visible.map((row) => (
+      <div
+        class="data-row"
+        style={row.brandColor ? `--brand:${row.brandColor}` : undefined}
+      >
+        <span class="name">
+          {row.platform && <PlatformIcon platform={row.platform} size={18} tint />}
+          <span data-sensitive={sensitive || undefined}>{row.label}</span>
+        </span>
+        <span class="count tabular-nums">{row.count}</span>
+        <div class:list={["data-bar", row.brandColor && "brand"]} aria-hidden="true">
+          <span style={`width:${Math.max(6, (row.share > 0 ? row.share * 100 : (row.count / maxCount) * 100)).toFixed(1)}%`}></span>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+
+<style>
+  .empty-line {
+    margin: 0;
+    padding: 0.6rem 0;
+    font-size: var(--text-sm);
+  }
+</style>

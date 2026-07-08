@@ -1,0 +1,318 @@
+---
+import Button from "@components/Button.astro";
+import ScreenshotSafeToggle from "@components/ScreenshotSafeToggle.astro";
+---
+
+<dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle">
+  <form class="settings-modal" id="settingsForm" method="dialog">
+    <header class="modal-head">
+      <div>
+        <h2 id="settingsTitle">Tracking settings</h2>
+        <p class="muted" id="settingsSummary">Configure Meta CAPI and pixel delivery.</p>
+      </div>
+      <button class="button ghost icon-only" value="cancel" type="submit" aria-label="Close settings">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10" /><path d="M15 5L5 15" /></svg>
+      </button>
+    </header>
+
+    <div class="tracking-status muted" id="settingsTrackingStatus">
+      <span class="dot" aria-hidden="true"></span>
+      <p>Loading tracking status…</p>
+    </div>
+
+    <div class="modal-fields">
+      <ScreenshotSafeToggle id="screenshotSafeModeModal" compact />
+      <label class="field">
+        <span>Meta Pixel / Dataset ID</span>
+        <input id="settingsMetaPixelId" name="metaPixelId" data-sensitive inputmode="numeric" placeholder="123456789012345" />
+      </label>
+      <label class="field">
+        <span>Meta CAPI access token</span>
+        <input id="settingsMetaAccessToken" name="metaAccessToken" data-sensitive type="password" autocomplete="off" placeholder="Leave blank to keep current token" />
+      </label>
+      <label class="field">
+        <span>Meta API version</span>
+        <input id="settingsMetaApiVersion" name="metaApiVersion" placeholder="v23.0" />
+      </label>
+      <label class="field">
+        <span>Meta test event code</span>
+        <input id="settingsMetaTestEventCode" name="metaTestEventCode" data-sensitive placeholder="TEST12345" />
+      </label>
+      <label class="field">
+        <span>Meta ad account ID</span>
+        <input id="settingsMetaAdAccountId" name="metaAdAccountId" data-sensitive placeholder="act_1234567890" />
+      </label>
+    </div>
+
+    <div class="form-actions modal-actions">
+      <Button variant="accent" type="button" id="saveSettings">Save</Button>
+      <Button variant="secondary" type="button" id="testPixelFromModal">Send test event</Button>
+      <p class="muted" id="settingsSaveStatus" aria-live="polite"></p>
+    </div>
+
+    <section class="modal-section" aria-label="Recent CAPI health">
+      <div class="panel-head">
+        <h3>Recent CAPI events</h3>
+        <a class="button ghost sm" id="settingsEventsManagerLink" data-sensitive href="https://business.facebook.com/events_manager2/list/pixel/" target="_blank" rel="noreferrer">Events Manager</a>
+      </div>
+      <div class="admin-table-wrap modal-table">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Time</th><th>Event</th><th>Kind</th><th>Status</th><th>Detail</th></tr>
+          </thead>
+          <tbody id="settingsCapiRows">
+            <tr><td colspan="5" class="muted">Open settings to load events.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </form>
+</dialog>
+
+<script is:inline>
+  const settingsDialog = document.querySelector("#settingsDialog");
+  const settingsForm = document.querySelector("#settingsForm");
+  const statusBox = document.querySelector("#settingsTrackingStatus");
+  const summary = document.querySelector("#settingsSummary");
+  const saveButton = document.querySelector("#saveSettings");
+  const testButton = document.querySelector("#testPixelFromModal");
+  const saveStatus = document.querySelector("#settingsSaveStatus");
+  const rows = document.querySelector("#settingsCapiRows");
+  const pixelInput = document.querySelector("#settingsMetaPixelId");
+  const tokenInput = document.querySelector("#settingsMetaAccessToken");
+  const apiVersionInput = document.querySelector("#settingsMetaApiVersion");
+  const testCodeInput = document.querySelector("#settingsMetaTestEventCode");
+  const adAccountInput = document.querySelector("#settingsMetaAdAccountId");
+  const eventsManagerLink = document.querySelector("#settingsEventsManagerLink");
+
+  let settingsLoaded = false;
+
+  function setTrackingStatus(data) {
+    const pixelConfigured = Boolean(data?.metaPixelId);
+    const capiConfigured = pixelConfigured && Boolean(data?.hasMetaAccessToken);
+    statusBox.className = `tracking-status ${capiConfigured ? "ok" : pixelConfigured ? "warn" : "muted"}`;
+    statusBox.querySelector("p").textContent = capiConfigured
+      ? "Connected. Server events can be sent to Meta."
+      : pixelConfigured
+        ? "Pixel set, access token missing. CAPI paused."
+        : "Not connected. First-party tracking only.";
+    summary.textContent = data?.hasMetaAccessToken
+      ? "Token stored. Paste a new token only when rotating credentials."
+      : "Paste the dataset access token to enable server-side events.";
+    testButton.disabled = !capiConfigured;
+  }
+
+  function renderCapiRows(capiLogs) {
+    const logs = Array.isArray(capiLogs) ? capiLogs : [];
+    if (logs.length === 0) {
+      rows.innerHTML = '<tr><td colspan="5" class="muted">No events yet.</td></tr>';
+      return;
+    }
+    rows.innerHTML = logs.slice(0, 12).map((row) => {
+      const eventId = String(row.event_id ?? "");
+      const detail = row.error_message ?? row.meta_trace_id ?? "—";
+      return `<tr>
+        <td>${escapeHtml(String(row.created_at ?? "").slice(0, 19))}</td>
+        <td class="mono" data-sensitive>${escapeHtml(eventId.slice(0, 18))}${eventId.length > 18 ? "…" : ""}</td>
+        <td>${escapeHtml(row.kind ?? "")}</td>
+        <td class="${escapeHtml(row.status ?? "")}">${escapeHtml(row.status ?? "")}</td>
+        <td data-sensitive>${escapeHtml(detail)}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  async function loadSettings(force = false) {
+    if (settingsLoaded && !force) return;
+    saveStatus.textContent = "Loading…";
+    const response = await fetch("/api/admin/settings");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Settings load failed.");
+
+    pixelInput.value = data.metaPixelId ?? "";
+    tokenInput.value = "";
+    apiVersionInput.value = data.metaApiVersion ?? "v23.0";
+    testCodeInput.value = data.metaTestEventCode ?? "";
+    adAccountInput.value = data.metaAdAccountId ?? "";
+    eventsManagerLink.href = metaEventsManagerUrl(data.metaPixelId);
+    setTrackingStatus(data);
+    renderCapiRows(data.capiLogs);
+    settingsLoaded = true;
+    saveStatus.textContent = "";
+  }
+
+  function metaEventsManagerUrl(pixelId) {
+    const base = "https://business.facebook.com/events_manager2/list/pixel/";
+    const trimmed = String(pixelId ?? "").trim();
+    if (!trimmed) return base;
+    return `${base}${encodeURIComponent(trimmed)}/test_events`;
+  }
+
+  for (const trigger of document.querySelectorAll("[data-settings-open]")) {
+    trigger.addEventListener("click", async (event) => {
+      event.preventDefault();
+      if (!settingsDialog.open) settingsDialog.showModal();
+      try {
+        await loadSettings();
+      } catch (error) {
+        saveStatus.textContent = error instanceof Error ? error.message : "Settings load failed.";
+      }
+    });
+  }
+
+  settingsForm.addEventListener("submit", () => {
+    settingsDialog.close();
+  });
+
+  saveButton.addEventListener("click", async () => {
+    saveStatus.textContent = "Saving…";
+    const body = {
+      metaPixelId: pixelInput.value.trim(),
+      metaAccessToken: tokenInput.value.trim(),
+      metaApiVersion: apiVersionInput.value.trim(),
+      metaTestEventCode: testCodeInput.value.trim(),
+      metaAdAccountId: adAccountInput.value.trim()
+    };
+    const response = await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      saveStatus.textContent = data.error || "Save failed.";
+      return;
+    }
+    settingsLoaded = false;
+    await loadSettings(true);
+    saveStatus.textContent = "Saved.";
+  });
+
+  testButton.addEventListener("click", async () => {
+    saveStatus.textContent = "Sending test event…";
+    const response = await fetch("/api/admin/test-pixel", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    saveStatus.textContent = response.ok
+      ? `Test ${data.status}. Event ${data.eventId}. Trace: ${data.metaTraceId ?? "n/a"}`
+      : data.error || "Test failed.";
+    await loadSettings(true);
+  });
+</script>
+
+<style>
+  .settings-dialog {
+    width: min(46rem, calc(100vw - 1.5rem));
+    max-height: min(46rem, calc(100dvh - 1.5rem));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    background: var(--surface);
+    color: var(--foreground);
+    box-shadow: var(--shadow-pop);
+  }
+
+  .settings-dialog::backdrop {
+    background: oklch(0 0 0 / 0.58);
+  }
+
+  .settings-modal {
+    display: grid;
+    gap: 1rem;
+    padding: 1.1rem;
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .modal-head h2 {
+    margin: 0 0 0.25rem;
+    font-size: var(--text-lg);
+  }
+
+  .modal-head p {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .modal-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .field span {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .modal-actions {
+    align-items: center;
+  }
+
+  .modal-actions p {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .modal-section {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .modal-section h3 {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .modal-table {
+    max-height: 14rem;
+  }
+
+  @media (max-width: 680px) {
+    .settings-dialog {
+      width: calc(100vw - 1rem);
+      max-height: calc(100dvh - 1rem);
+    }
+
+    .settings-modal {
+      padding: 0.9rem;
+    }
+
+    .modal-fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .settings-dialog[open] {
+      animation: settings-pop 160ms cubic-bezier(0.2, 0, 0, 1);
+    }
+  }
+
+  @keyframes settings-pop {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+import BaseLayout, { type LayoutHeadProps } from "./BaseLayout.astro";
+
+interface Props extends LayoutHeadProps {
+  bodyClass?: string;
+  fullWidth?: boolean;
+}
+
+const { fullWidth = false, bodyClass = "", ...head } = Astro.props;
+const classes = [bodyClass].filter(Boolean).join(" ");
+---
+
+<BaseLayout {...head} surface="admin" bodyClass={classes}>
+  <div class:list={["beamlink-admin", !fullWidth && "beamlink-admin--shell"]}>
+    <slot />
+  </div>
+
+  <script is:inline>
+    (() => {
+      if (!location.pathname.startsWith("/admin")) return;
+      const KEY = "ms_screenshot_safe";
+      const apply = (on) => document.body.classList.toggle("screenshot-safe", on);
+      const sync = () => {
+        const on = localStorage.getItem(KEY) === "1";
+        apply(on);
+        for (const input of document.querySelectorAll('input[name="screenshotSafeMode"]')) {
+          input.checked = on;
+        }
+      };
+      sync();
+      document.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.name !== "screenshotSafeMode") return;
+        localStorage.setItem(KEY, target.checked ? "1" : "0");
+        apply(target.checked);
+        for (const input of document.querySelectorAll('input[name="screenshotSafeMode"]')) {
+          input.checked = target.checked;
+        }
+      });
+      document.addEventListener("astro:page-load", sync);
+    })();
+  </script>
+</BaseLayout>
+
+<style>
+  .beamlink-admin {
+    min-height: 100dvh;
+  }
+
+  .beamlink-admin--shell {
+    width: min(var(--beamlink-max-width), calc(100% - var(--beamlink-space-8)));
+    margin-inline: auto;
+  }
+</style>

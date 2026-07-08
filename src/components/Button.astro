@@ -1,0 +1,63 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+interface Props extends HTMLAttributes<"button">, HTMLAttributes<"a"> {
+  href?: string;
+  type?: "button" | "submit" | "reset";
+  variant?: "primary" | "secondary" | "accent" | "ghost";
+  size?: "sm" | "md";
+  class?: string;
+  disabled?: boolean;
+  "aria-disabled"?: boolean | "true" | "false";
+  target?: string;
+  rel?: string;
+  id?: string;
+}
+
+const {
+  href,
+  type = "button",
+  variant = "primary",
+  size = "md",
+  class: className = "",
+  disabled = false,
+  "aria-disabled": ariaDisabled,
+  target,
+  rel,
+  id,
+  ...rest
+} = Astro.props;
+
+const classes = ["button", variant !== "primary" ? variant : "", size !== "md" ? size : "", className]
+  .filter(Boolean)
+  .join(" ");
+---
+
+{href ? (
+  <a class={classes} href={href} id={id} target={target} rel={rel} aria-disabled={ariaDisabled ?? (disabled ? "true" : undefined)} {...rest}>
+    <slot />
+  </a>
+) : (
+  <button class={classes} type={type} id={id} disabled={disabled} aria-disabled={ariaDisabled} {...rest}>
+    <slot />
+  </button>
+)}
+
+<style>
+  .button.sm {
+    min-height: 2rem;
+    padding: var(--beamlink-space-2) var(--beamlink-space-3);
+    font-size: var(--beamlink-text-xs);
+  }
+
+  .button.ghost {
+    background: transparent;
+    color: var(--beamlink-muted);
+    border-color: transparent;
+  }
+
+  .button.ghost:hover {
+    background: var(--beamlink-surface-2);
+    color: var(--beamlink-ink);
+  }
+</style>
