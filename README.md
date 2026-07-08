@@ -2,7 +2,8 @@
 
 **Fast first-party music smartlinks** — self-hosted on Cloudflare Workers with edge-rendered link pages, first-party analytics, and server-side Meta Pixel/CAPI.
 
-Canonical home: [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMusic/beamlink)
+**Documentation:** [derpcatmusic.github.io/beamlink](https://derpcatmusic.github.io/beamlink)  
+**Repository:** [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMusic/beamlink)
 
 ## Stack
 
@@ -10,41 +11,30 @@ Canonical home: [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMus
 - D1 for artists, tracks, links, destinations, and daily rollups
 - KV for published link cache
 - R2 for owned artwork storage
-- Workers Analytics Engine for raw event points
+- Cloudflare Queues for async Meta CAPI delivery
 - Cloudflare Access or password gate for `/admin/*`
 
-## Setup
+Workers Analytics Engine is supported but optional (commented out in `wrangler.jsonc` by default).
+
+## Quick start
+
+See the [getting started guide](https://derpcatmusic.github.io/beamlink/getting-started.html) for full setup. Short version:
 
 ```sh
 bun install
-wrangler d1 create beamlink
-wrangler kv namespace create LINK_CACHE
-wrangler r2 bucket create beamlink-artwork
-wrangler queues create beamlink-conversions
-wrangler queues create beamlink-conversions-dlq
-```
-
-Replace the placeholder IDs in `wrangler.jsonc`, then apply migrations:
-
-```sh
+# create D1, KV, R2, queues — see wrangler.jsonc
 bun run db:migrate:local
-bun run db:migrate
+bun run dev
 ```
 
-Optional secrets:
+## Docs
 
-```sh
-wrangler secret put META_PIXEL_ID
-wrangler secret put META_ACCESS_TOKEN
-wrangler secret put SPOTIFY_CLIENT_ID
-wrangler secret put SPOTIFY_CLIENT_SECRET
-```
-
-Without Spotify credentials, Spotify import falls back to oEmbed, which provides title/artwork but not ISRC. TooLost/manual import can still save ISRC-backed tracks.
-
-## Migrating existing deploys
-
-Update the placeholder IDs in `wrangler.jsonc`. Leave `PUBLIC_BASE_URL` empty to use the request origin, or set it to your deployed host. Keep `workers_dev` for a free `workers.dev` route, or replace it with a custom domain route when you bring your own domain.
+| Guide | Description |
+|-------|-------------|
+| [Getting started](https://derpcatmusic.github.io/beamlink/getting-started.html) | Install, resources, migrations, deploy |
+| [Configuration](https://derpcatmusic.github.io/beamlink/configuration.html) | Bindings, vars, secrets, routes |
+| [Admin workflow](https://derpcatmusic.github.io/beamlink/admin.html) | Create and publish smartlinks |
+| [Meta tracking](https://derpcatmusic.github.io/beamlink/tracking.html) | Pixel, CAPI, cookies, troubleshooting |
 
 ## Workflow
 
@@ -55,8 +45,12 @@ Update the placeholder IDs in `wrangler.jsonc`. Leave `PUBLIC_BASE_URL` empty to
 5. Add platform destinations.
 6. Publish the link.
 
-Published links resolve at `/:slug`; outbound clicks resolve at `/out/:slug/:platform`.
+Published links resolve at `/:slug`; outbound clicks resolve at `/out/:slug/:platform` (short alias `/d/:slug/:platform`).
+
+## Deployment fork
+
+If you run a personal deployment with existing Cloudflare resources (e.g. the [music-shortlink](https://github.com/DerpcatMusic/music-shortlink) fork), develop features in this repo and sync into your fork. See that repo's `docs/deployment-workflow.md`.
 
 ## License
 
-See repository license file (open-source launch).
+MIT — see [LICENSE](LICENSE).

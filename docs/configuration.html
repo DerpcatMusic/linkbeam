@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configuration — Beamlink docs</title>
+    <meta
+      name="description"
+      content="wrangler.jsonc bindings, environment variables, secrets, and routes for Beamlink."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="assets/docs.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell site-header-inner">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true"></span>
+          beamlink
+        </a>
+        <nav class="header-links" aria-label="Header">
+          <a href="index.html">Home</a>
+          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell docs-layout">
+      <aside class="sidebar">
+        <h2>Documentation</h2>
+        <nav aria-label="Docs">
+          <a href="getting-started.html">Getting started</a>
+          <a href="configuration.html" aria-current="page">Configuration</a>
+          <a href="admin.html">Admin workflow</a>
+          <a href="tracking.html">Meta tracking</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <h1>Configuration</h1>
+        <p class="lede">
+          Beamlink is configured through <code>wrangler.jsonc</code> for infrastructure bindings and
+          Wrangler secrets for credentials. Vars are non-secret defaults you can commit.
+        </p>
+
+        <h2>Cloudflare bindings</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Binding</th>
+                <th>Type</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>DB</code></td>
+                <td>D1</td>
+                <td>Artists, tracks, links, destinations, metrics, settings</td>
+              </tr>
+              <tr>
+                <td><code>LINK_CACHE</code></td>
+                <td>KV</td>
+                <td>Published smartlink JSON cache (~60s TTL)</td>
+              </tr>
+              <tr>
+                <td><code>ARTWORK</code></td>
+                <td>R2</td>
+                <td>Owned artwork storage</td>
+              </tr>
+              <tr>
+                <td><code>CONVERSION_EVENTS</code></td>
+                <td>Queue</td>
+                <td>Async Meta CAPI delivery (DLQ on failure)</td>
+              </tr>
+              <tr>
+                <td><code>ANALYTICS</code></td>
+                <td>Analytics Engine</td>
+                <td>Optional raw event points (commented out by default)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Public vars</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Default</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>WORKER_NAME</code></td>
+                <td><code>beamlink</code></td>
+                <td>Prefix for D1/R2/queue resource names in onboarding snippets</td>
+              </tr>
+              <tr>
+                <td><code>PUBLIC_BASE_URL</code></td>
+                <td><code>""</code></td>
+                <td>Set to your deployed host (e.g. <code>https://links.example.com</code>). Empty uses request origin.</td>
+              </tr>
+              <tr>
+                <td><code>META_API_VERSION</code></td>
+                <td><code>v23.0</code></td>
+                <td>Meta Graph API version for CAPI</td>
+              </tr>
+              <tr>
+                <td><code>META_CONVERSION_VALUE</code></td>
+                <td><code>1</code></td>
+                <td>Relative value sent with conversion events (not literal revenue)</td>
+              </tr>
+              <tr>
+                <td><code>META_CURRENCY</code></td>
+                <td><code>USD</code></td>
+                <td>Currency code for conversion value</td>
+              </tr>
+              <tr>
+                <td><code>META_TEST_EVENT_CODE</code></td>
+                <td><code>""</code></td>
+                <td>Optional Test Events code from Meta Events Manager</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Secrets</h2>
+        <p>Set with <code>wrangler secret put NAME</code> or <code>.dev.vars</code> locally (never commit).</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Secret</th>
+                <th>Required</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>META_PIXEL_ID</code></td>
+                <td>For tracking</td>
+                <td>Meta Pixel ID</td>
+              </tr>
+              <tr>
+                <td><code>META_ACCESS_TOKEN</code></td>
+                <td>For CAPI</td>
+                <td>Conversions API access token</td>
+              </tr>
+              <tr>
+                <td><code>SPOTIFY_CLIENT_ID</code> / <code>SPOTIFY_CLIENT_SECRET</code></td>
+                <td>Optional</td>
+                <td>Full Spotify import with ISRC</td>
+              </tr>
+              <tr>
+                <td><code>CF_ACCESS_TEAM_DOMAIN</code> / <code>CF_ACCESS_AUD</code></td>
+                <td>Optional</td>
+                <td>Cloudflare Access JWT for <code>/admin</code></td>
+              </tr>
+              <tr>
+                <td><code>ADMIN_PASSWORD_HASH</code> / <code>ADMIN_SESSION_SECRET</code></td>
+                <td>Optional</td>
+                <td>Password gate for <code>/admin</code> when Access is not used</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Routes</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Handler</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>/</code></td>
+                <td>Marketing landing (on your Worker)</td>
+              </tr>
+              <tr>
+                <td><code>/:slug</code></td>
+                <td>Public smartlink fan page</td>
+              </tr>
+              <tr>
+                <td><code>/out/:slug/:platform</code></td>
+                <td>Outbound click redirect + tracking</td>
+              </tr>
+              <tr>
+                <td><code>/d/:slug/:platform</code></td>
+                <td>Short outbound alias (same behavior)</td>
+              </tr>
+              <tr>
+                <td><code>/admin/*</code></td>
+                <td>Operator UI (auth required in production)</td>
+              </tr>
+              <tr>
+                <td><code>/api/*</code></td>
+                <td>REST endpoints (import, subscribe, admin APIs)</td>
+              </tr>
+              <tr>
+                <td><code>/artwork/:trackId</code></td>
+                <td>Artwork proxy from R2</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Custom domain</h2>
+        <p>Replace <code>workers_dev: true</code> with a route block:</p>
+        <div class="terminal">
+          <pre><code>"routes": [
+  {
+    "pattern": "links.example.com",
+    "custom_domain": true
+  }
+]</code></pre>
+        </div>
+        <p>Set <code>PUBLIC_BASE_URL</code> to the same host so outbound links and CAPI payloads use the correct origin.</p>
+
+        <h2>Scheduled tasks</h2>
+        <p>
+          A cron trigger runs every 15 minutes to retry failed CAPI events logged in D1.
+          Configured in <code>wrangler.jsonc</code> under <code>triggers.crons</code>.
+        </p>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer-inner">
+        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+  </body>
+</html>

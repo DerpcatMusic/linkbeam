@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin workflow — Beamlink docs</title>
+    <meta
+      name="description"
+      content="Create, import, publish, and analyze music smartlinks in the Beamlink admin."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="assets/docs.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell site-header-inner">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true"></span>
+          beamlink
+        </a>
+        <nav class="header-links" aria-label="Header">
+          <a href="index.html">Home</a>
+          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell docs-layout">
+      <aside class="sidebar">
+        <h2>Documentation</h2>
+        <nav aria-label="Docs">
+          <a href="getting-started.html">Getting started</a>
+          <a href="configuration.html">Configuration</a>
+          <a href="admin.html" aria-current="page">Admin workflow</a>
+          <a href="tracking.html">Meta tracking</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <h1>Admin workflow</h1>
+        <p class="lede">
+          The admin is a dense operator panel at <code>/admin</code>. Create links from distributor or
+          streaming URLs, publish to a slug, and read per-link analytics.
+        </p>
+
+        <h2>Onboarding wizard</h2>
+        <p>
+          First visit <code>/admin/onboarding</code>. The wizard checks Cloudflare bindings, secrets,
+          database migrations, admin auth, and optional pixel test — and generates wrangler snippets
+          for anything missing.
+        </p>
+
+        <h2>Create a link</h2>
+        <ol>
+          <li>Open <code>/admin</code> and create a new link.</li>
+          <li>Paste a <strong>TooLost</strong>, <strong>Spotify</strong>, or <strong>Apple Music</strong> URL (or enter ISRC manually).</li>
+          <li>Fill missing title, artist, or ISRC if the provider does not expose them.</li>
+          <li>Add platform destinations (Spotify, Apple, YouTube, SoundCloud, Bandcamp, Deezer, Tidal, Amazon, other).</li>
+          <li>Publish. The fan page goes live at <code>/:slug</code>.</li>
+        </ol>
+
+        <h2>Presave vs live</h2>
+        <p>
+          Links can run in <strong>presave</strong> mode before release date and switch to
+          <strong>live</strong> automatically when the release date passes. Campaigns keep the same URL.
+        </p>
+
+        <h2>Import sources</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>What you get</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>TooLost</td>
+                <td>Metadata + ISRC when available</td>
+              </tr>
+              <tr>
+                <td>Spotify (API)</td>
+                <td>Title, artist, artwork, ISRC, embed palette</td>
+              </tr>
+              <tr>
+                <td>Spotify (oEmbed fallback)</td>
+                <td>Title and artwork only</td>
+              </tr>
+              <tr>
+                <td>Apple Music</td>
+                <td>Metadata + artwork</td>
+              </tr>
+              <tr>
+                <td>Odesli backfill</td>
+                <td>Cross-platform destination URLs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Public fan page</h2>
+        <ul>
+          <li>Artwork-derived color palette (no Beamlink branding on fan pages)</li>
+          <li>Platform CTAs as real anchor links (works without JS)</li>
+          <li>Countdown for presave releases</li>
+          <li>Embed mode: append <code>?embed=1</code> for iframe demos</li>
+        </ul>
+
+        <h2>Analytics</h2>
+        <p>
+          Each link has an analytics view with views, clicks, CTR, platform breakdown, geo, referrer,
+          funnel, and hourly heatmaps. Numbers exclude bot traffic. Meta campaign insights appear when
+          credentials are configured.
+        </p>
+
+        <h2>Admin auth</h2>
+        <p>Production <code>/admin</code> requires one of:</p>
+        <ul>
+          <li><strong>Cloudflare Access</strong> — JWT validated via team domain + audience secrets</li>
+          <li><strong>Password session</strong> — bcrypt hash + signed session cookie</li>
+        </ul>
+        <p>Local dev and <code>localhost</code> bypass auth for faster iteration.</p>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer-inner">
+        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -13,6 +13,7 @@ import {
   wranglerMigrationCommands,
   wranglerResourceCommands,
   wranglerSecretCommands,
+  workerNameFromEnv,
   type OnboardingStepId
 } from "@lib/onboarding";
 import { getMetaAccessToken, getMetaPixelId, getSetting } from "@lib/settings";
@@ -43,6 +44,7 @@ const [metaPixelIdSetting, metaAccessToken] = await Promise.all([
 const envPixelId = await getMetaPixelId(env);
 
 const bindingsSnippet = wranglerBindingsSnippet({
+  workerName: workerNameFromEnv(env),
   publicBaseUrl: baseUrl || "https://links.example.com"
 });
 
@@ -165,7 +167,7 @@ function stepHref(stepId: OnboardingStepId): string {
             <span class="code-block-title">Create resources</span>
             <button class="button ghost sm copy-btn" type="button" data-copy-target="#resourceCommands">Copy</button>
           </div>
-          <pre class="code-block" id="resourceCommands"><code>{wranglerResourceCommands()}</code></pre>
+          <pre class="code-block" id="resourceCommands"><code>{wranglerResourceCommands(workerNameFromEnv(env))}</code></pre>
         </div>
 
         <div class="code-block-wrap">

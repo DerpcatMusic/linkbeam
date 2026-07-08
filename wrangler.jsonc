@@ -53,6 +53,7 @@
   },
   "vars": {
     "PUBLIC_BASE_URL": "",
+    "WORKER_NAME": "beamlink",
     "META_API_VERSION": "v23.0",
     "META_TEST_EVENT_CODE": "",
     // Relative optimization value per streaming conversion (enables value-based

@@ -4,7 +4,7 @@ import { ensureDemoSmartLink } from "@lib/demo-link";
 import { getRuntimeEnv } from "@lib/runtime";
 
 const githubUrl = "https://github.com/DerpcatMusic/beamlink";
-const docsUrl = "https://github.com/DerpcatMusic/beamlink#setup";
+const docsUrl = "https://derpcatmusic.github.io/beamlink/getting-started.html";
 const demoLink = await ensureDemoSmartLink(getRuntimeEnv(Astro));
 const demoHref = `/${demoLink.slug}`;
 const demoDisplayUrl = `${Astro.url.host}/${demoLink.slug}`;

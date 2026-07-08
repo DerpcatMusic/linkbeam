@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Getting started — Beamlink docs</title>
+    <meta
+      name="description"
+      content="Install Beamlink on your own Cloudflare account: resources, migrations, secrets, and first deploy."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="assets/docs.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell site-header-inner">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true"></span>
+          beamlink
+        </a>
+        <nav class="header-links" aria-label="Header">
+          <a href="index.html">Home</a>
+          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell docs-layout">
+      <aside class="sidebar">
+        <h2>Documentation</h2>
+        <nav aria-label="Docs">
+          <a href="getting-started.html" aria-current="page">Getting started</a>
+          <a href="configuration.html">Configuration</a>
+          <a href="admin.html">Admin workflow</a>
+          <a href="tracking.html">Meta tracking</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <h1>Getting started</h1>
+        <p class="lede">
+          Beamlink runs on your Cloudflare account as a Worker with D1, KV, R2, and Queues.
+          This guide gets you from clone to a working local dev environment.
+        </p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li><strong>Bun</strong> or Node 22.12+</li>
+          <li>A <strong>Cloudflare account</strong> with Workers, D1, KV, R2, and Queues enabled</li>
+          <li><strong>Wrangler</strong> authenticated (<code>wrangler login</code>)</li>
+        </ul>
+
+        <h2>1. Clone and install</h2>
+        <div class="terminal">
+          <pre><code>git clone https://github.com/DerpcatMusic/beamlink
+cd beamlink
+bun install</code></pre>
+        </div>
+
+        <h2>2. Create Cloudflare resources</h2>
+        <p>Create the bindings Beamlink expects, then copy the IDs into <code>wrangler.jsonc</code>.</p>
+        <div class="terminal">
+          <pre><code>wrangler d1 create beamlink
+wrangler kv namespace create LINK_CACHE
+wrangler r2 bucket create beamlink-artwork
+wrangler queues create beamlink-conversions
+wrangler queues create beamlink-conversions-dlq</code></pre>
+        </div>
+        <p>
+          Replace <code>REPLACE_WITH_D1_DATABASE_ID</code> and
+          <code>REPLACE_WITH_KV_NAMESPACE_ID</code> in <code>wrangler.jsonc</code>.
+          See the <a href="configuration.html">configuration reference</a> for every binding.
+        </p>
+
+        <h2>3. Apply database migrations</h2>
+        <div class="terminal">
+          <pre><code>bun run db:migrate:local   # local D1 for dev
+bun run db:migrate         # remote D1 for production</code></pre>
+        </div>
+
+        <h2>4. Optional secrets</h2>
+        <p>Meta and Spotify credentials unlock full tracking and import. Without Spotify, import falls back to oEmbed (title/artwork only, no ISRC).</p>
+        <div class="terminal">
+          <pre><code>wrangler secret put META_PIXEL_ID
+wrangler secret put META_ACCESS_TOKEN
+wrangler secret put SPOTIFY_CLIENT_ID
+wrangler secret put SPOTIFY_CLIENT_SECRET</code></pre>
+        </div>
+
+        <h2>5. Run locally</h2>
+        <div class="terminal">
+          <pre><code>bun run dev</code></pre>
+        </div>
+        <p>
+          Open <code>/admin</code> on the dev server. The onboarding wizard at
+          <code>/admin/onboarding</code> checks bindings, secrets, and migrations for you.
+        </p>
+
+        <h2>6. Deploy</h2>
+        <div class="terminal">
+          <pre><code>bun run build
+bun run deploy</code></pre>
+        </div>
+        <p>
+          By default the worker is available on <code>*.workers.dev</code>.
+          Add a custom domain route in <code>wrangler.jsonc</code> when you are ready, and set
+          <code>PUBLIC_BASE_URL</code> to that host.
+        </p>
+
+        <div class="panel">
+          <p>
+            <strong>Already running an older <code>music-shortlink</code> deploy?</strong>
+            Keep your existing Cloudflare resource names and domain. Point your deployment fork at
+            this repo and sync product code — see
+            <a href="https://github.com/DerpcatMusic/music-shortlink/blob/main/docs/deployment-workflow.md">deployment workflow</a>.
+          </p>
+        </div>
+
+        <h2>Next steps</h2>
+        <ul>
+          <li><a href="configuration.html">Configuration reference</a></li>
+          <li><a href="admin.html">Create your first smartlink</a></li>
+          <li><a href="tracking.html">Wire Meta Pixel and CAPI</a></li>
+        </ul>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer-inner">
+        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -9,6 +9,7 @@ type Env = {
   ANALYTICS?: AnalyticsEngineDataset;
   CONVERSION_EVENTS?: Queue;
   PUBLIC_BASE_URL: string;
+  WORKER_NAME?: string;
   META_PIXEL_ID?: string;
   META_ACCESS_TOKEN?: string;
   META_API_VERSION?: string;

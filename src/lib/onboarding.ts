@@ -59,6 +59,11 @@ export interface OnboardingStatus {
 
 const DEFAULT_WORKER_NAME = "beamlink";
 
+export function workerNameFromEnv(env?: Pick<Env, "WORKER_NAME">): string {
+  const configured = env?.WORKER_NAME?.trim();
+  return configured || DEFAULT_WORKER_NAME;
+}
+
 export function wranglerResourceCommands(workerName = DEFAULT_WORKER_NAME): string {
   return [
     `wrangler d1 create ${workerName}`,

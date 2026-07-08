@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta tracking — Beamlink docs</title>
+    <meta
+      name="description"
+      content="First-party Meta Pixel and Conversions API setup for Beamlink smartlinks."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="assets/docs.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell site-header-inner">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true"></span>
+          beamlink
+        </a>
+        <nav class="header-links" aria-label="Header">
+          <a href="index.html">Home</a>
+          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="shell docs-layout">
+      <aside class="sidebar">
+        <h2>Documentation</h2>
+        <nav aria-label="Docs">
+          <a href="getting-started.html">Getting started</a>
+          <a href="configuration.html">Configuration</a>
+          <a href="admin.html">Admin workflow</a>
+          <a href="tracking.html" aria-current="page">Meta tracking</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <h1>Meta tracking</h1>
+        <p class="lede">
+          Beamlink sends conversion events from your domain — server-side via Meta Conversions API (CAPI)
+          with browser deduplication. No third-party pixel scripts on fan pages.
+        </p>
+
+        <h2>Setup</h2>
+        <ol>
+          <li>Create a Meta Pixel in Events Manager.</li>
+          <li>Generate a Conversions API access token for the same pixel.</li>
+          <li>Set secrets: <code>META_PIXEL_ID</code> and <code>META_ACCESS_TOKEN</code>.</li>
+          <li>Optional: set <code>META_TEST_EVENT_CODE</code> while validating in Test Events.</li>
+          <li>Use the onboarding pixel test step or admin settings to send a test event.</li>
+        </ol>
+
+        <h2>First-party cookies</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Cookie</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>_fbp</code></td>
+                <td>Browser ID set server-side when missing</td>
+              </tr>
+              <tr>
+                <td><code>_fbc</code></td>
+                <td>Click ID derived from <code>fbclid</code> query param</td>
+              </tr>
+              <tr>
+                <td><code>_dg_vid</code></td>
+                <td>Beamlink visitor ID for analytics</td>
+              </tr>
+              <tr>
+                <td><code>_dg_attr</code></td>
+                <td>UTM / campaign attribution payload</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Attribution params (<code>fbclid</code>, UTM tags) are preserved through outbound platform links
+          so late conversions still match the original ad click.
+        </p>
+
+        <h2>Events</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>When</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>PageView</td>
+                <td>Fan lands on <code>/:slug</code></td>
+              </tr>
+              <tr>
+                <td>Lead (configurable)</td>
+                <td>Outbound platform click</td>
+              </tr>
+              <tr>
+                <td>Subscribe</td>
+                <td>Presave email signup</td>
+              </tr>
+              <tr>
+                <td>Paid click variant</td>
+                <td>When paid traffic is detected (per-link setting)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Each event gets a shared <code>event_id</code> for browser/server deduplication.
+          Conversion value and currency come from <code>META_CONVERSION_VALUE</code> and
+          <code>META_CURRENCY</code>.
+        </p>
+
+        <h2>Delivery pipeline</h2>
+        <ol>
+          <li>Event enqueued to <code>CONVERSION_EVENTS</code> Cloudflare Queue</li>
+          <li>Worker queue consumer sends to Meta Graph API</li>
+          <li>Failures logged to D1; cron retries every 15 minutes</li>
+          <li>Dead-letter queue catches exhausted retries</li>
+        </ol>
+
+        <h2>Bot filtering</h2>
+        <p>
+          Known crawlers and preview bots are excluded from metrics and CAPI payloads so ad optimization
+          is not polluted by non-human traffic.
+        </p>
+
+        <h2>Troubleshooting</h2>
+        <ul>
+          <li><strong>Events not in Meta:</strong> Check Test Events with <code>META_TEST_EVENT_CODE</code>; verify token has CAPI permissions.</li>
+          <li><strong>Low match quality:</strong> Ensure <code>fbclid</code> reaches the smartlink URL; confirm <code>_fbc</code> cookie is set.</li>
+          <li><strong>Retries piling up:</strong> Inspect CAPI log in admin settings; check queue DLQ in Cloudflare dashboard.</li>
+          <li><strong>Numbers differ from Meta:</strong> Beamlink excludes bots; Meta may attribute differently. Admin shows what was actually sent.</li>
+        </ul>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <div class="shell site-footer-inner">
+        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+  </body>
+</html>
