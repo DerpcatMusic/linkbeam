@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminPasswordHashKind,
+  createAdminPasswordRecord,
   createAdminSessionCookie,
   passwordAuthConfigured,
   verifyAdminPassword,
@@ -24,6 +26,20 @@ describe("admin password session", () => {
     };
     await expect(verifyAdminPassword("correct horse battery staple", env)).resolves.toBe(true);
     await expect(verifyAdminPassword("wrong", env)).resolves.toBe(false);
+  });
+
+  it("creates and verifies versioned PBKDF2 password records", async () => {
+    const record = await createAdminPasswordRecord("correct horse", new Uint8Array(16).fill(7));
+    expect(record).toMatch(/^pbkdf2_sha256\$600000\$/);
+    expect(adminPasswordHashKind(record)).toBe("pbkdf2");
+    await expect(verifyAdminPassword("correct horse", { ADMIN_PASSWORD_HASH: record })).resolves.toBe(true);
+    await expect(verifyAdminPassword("wrong", { ADMIN_PASSWORD_HASH: record })).resolves.toBe(false);
+  });
+
+  it("classifies legacy and malformed password records", async () => {
+    expect(adminPasswordHashKind(await sha256Hex("legacy"))).toBe("legacy");
+    expect(adminPasswordHashKind("pbkdf2_sha256$nope$bad$bad")).toBe("invalid");
+    await expect(verifyAdminPassword("anything", { ADMIN_PASSWORD_HASH: "malformed" })).resolves.toBe(false);
   });
 
   it("accepts a signed session cookie and rejects tampering", async () => {

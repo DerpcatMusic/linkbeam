@@ -18,6 +18,7 @@ import {
 } from "@lib/onboarding";
 import { getMetaAccessToken, getMetaPixelId, getSetting } from "@lib/settings";
 import { getRuntimeEnv, publicBaseUrl, requireAdmin } from "@lib/runtime";
+import { adminPasswordHashKind } from "@lib/admin-session";
 
 const env = getRuntimeEnv(Astro);
 const blocked = await requireAdmin(Astro.request, env);
@@ -42,6 +43,7 @@ const [metaPixelIdSetting, metaAccessToken] = await Promise.all([
   getMetaAccessToken(env)
 ]);
 const envPixelId = await getMetaPixelId(env);
+const passwordHashKind = env.ADMIN_PASSWORD_HASH ? adminPasswordHashKind(env.ADMIN_PASSWORD_HASH) : null;
 
 const bindingsSnippet = wranglerBindingsSnippet({
   workerName: workerNameFromEnv(env),
@@ -292,7 +294,8 @@ function stepHref(stepId: OnboardingStepId): string {
             <span class="status-mark" aria-hidden="true">{status.auth.passwordAuth ? "✓" : "○"}</span>
             <span>
               <strong>Password fallback</strong>
-              <span class="muted check-hint">ADMIN_PASSWORD_HASH (sha256 hex) + ADMIN_SESSION_SECRET for /admin/login.</span>
+              <span class="muted check-hint">ADMIN_PASSWORD_HASH (PBKDF2 record) + ADMIN_SESSION_SECRET for /admin/login.</span>
+              {passwordHashKind === "legacy" && <span class="form-error">Legacy SHA-256 hash detected. Generate a PBKDF2 record with <code>bun run auth:hash</code>.</span>}
             </span>
           </li>
           <li class:list={[{ ok: status.isDev }]}>
@@ -313,7 +316,7 @@ function stepHref(stepId: OnboardingStepId): string {
 wrangler secret put CF_ACCESS_AUD
 
 # Password fallback (optional)
-# Hash: echo -n 'your-password' | sha256sum
+# Generate locally: bun run auth:hash
 wrangler secret put ADMIN_PASSWORD_HASH
 wrangler secret put ADMIN_SESSION_SECRET`}</code></pre>
         </div>

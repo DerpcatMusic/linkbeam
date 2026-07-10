@@ -12,6 +12,7 @@
     "deploy": "bun run build && wrangler deploy --config dist/server/wrangler.json --keep-vars",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "auth:hash": "bun scripts/hash-admin-password.mjs",
     "test": "vitest run"
   },
   "dependencies": {
