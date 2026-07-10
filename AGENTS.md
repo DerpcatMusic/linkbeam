@@ -6,9 +6,11 @@ Open-source music smartlinks on Cloudflare Workers. Develop here; deployment for
 
 ```sh
 bun install
-bun run dev          # local D1 migrations + astro dev
+bun run dev          # local D1 migrations + foreground Astro dev server
+bun run dev:background # Astro's background mode for automation
 bun run test         # vitest
 bun run build        # astro check + build
+bun run smoke        # build and exercise the generated Worker locally
 bun run deploy       # build + wrangler deploy
 ```
 

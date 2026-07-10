@@ -26,6 +26,8 @@ bun install
 # create D1, KV, R2, queues — see wrangler.jsonc
 bun run db:migrate:local
 bun run dev
+# before deploying, exercise the generated Cloudflare Worker:
+bun run smoke
 ```
 
 ## Docs
