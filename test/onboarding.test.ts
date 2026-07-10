@@ -62,6 +62,8 @@ describe("onboarding helpers", () => {
     const snippet = wranglerBindingsSnippet({ d1Id: "abc", kvId: "def" });
     expect(snippet).toContain('"database_id": "abc"');
     expect(snippet).toContain('"id": "def"');
-    expect(wranglerResourceCommands()).toContain("wrangler d1 create beamlink");
+    expect(wranglerResourceCommands()).toContain("wrangler d1 create linkbeam");
+    expect(wranglerResourceCommands()).toContain("wrangler r2 bucket create linkbeam-artwork");
+    expect(wranglerResourceCommands()).toContain("wrangler queues create linkbeam-conversions");
   });
 });

@@ -2,16 +2,17 @@
 import AppLayout from "@layouts/AppLayout.astro";
 import Button from "@components/Button.astro";
 import Field from "@components/Field.astro";
+import { PRODUCT_NAME } from "@lib/brand";
 
 const next = Astro.url.searchParams.get("next") || "/admin";
 const hasError = Astro.url.searchParams.has("error");
 ---
 
-<AppLayout title="Sign in" description="Sign in to Beamlink admin.">
+<AppLayout title="Sign in" description={`Sign in to ${PRODUCT_NAME} admin.`}>
   <main class="admin-page auth-page">
     <form class="admin-panel auth-panel" method="post" action="/api/admin/login">
       <div>
-        <p class="eyebrow">Beamlink</p>
+        <p class="eyebrow">{PRODUCT_NAME}</p>
         <h1>Sign in</h1>
         <p class="muted">Use your admin password to manage links and analytics.</p>
       </div>

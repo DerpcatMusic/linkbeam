@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import "../styles/marketing.css";
+import { PRODUCT_NAME } from "@lib/brand";
 
 interface Props {
   title: string;
@@ -12,9 +13,9 @@ const {
   description = "Self-hosted music smartlinks and pre-release pages with edge speed and first-party Meta CAPI, built for indie labels running ads."
 } = Astro.props;
 
-const pageTitle = /^Beamlink\s[—-]\s/.test(title)
+const pageTitle = new RegExp(`^${PRODUCT_NAME}\\s[—-]\\s`).test(title)
   ? title
-  : `Beamlink — ${title.replace(/\s*·\s*Beamlink\s*$/i, "").trim()}`;
+  : `${PRODUCT_NAME} — ${title.replace(new RegExp(`\\s*·\\s*${PRODUCT_NAME}\\s*$`, "i"), "").trim()}`;
 ---
 
 <!doctype html>

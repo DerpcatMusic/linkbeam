@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ImportedTrack, Platform } from "@lib/types";
 import { safeFetchResponse } from "@lib/safe-fetch";
+import { USER_AGENT } from "@lib/brand";
 
 const odesliEntitySchema = z.object({
   id: z.string(),
@@ -23,7 +24,7 @@ export const odesliResponseSchema = z.object({
 });
 
 // Odesli also returns anghami, boomplay, napster, pandora, yandex, etc.
-// Beamlink only maps the storefronts shown on fan smartlinks; the rest stay manual/other.
+// Linkbeam only maps the storefronts shown on fan smartlinks; the rest stay manual/other.
 const odesliPlatformMap: Record<string, Platform> = {
   spotify: "spotify",
   appleMusic: "apple",
@@ -89,7 +90,7 @@ export async function importOdesli(sourceUrl: string): Promise<ImportedTrack> {
       maxBytes: 2_000_000,
       timeoutMs: 8_000,
       allowedHosts: ["api.song.link"],
-      init: { headers: { "User-Agent": "Beamlink/1.0 (+https://github.com/DerpcatMusic/beamlink)", Accept: "application/json" } }
+      init: { headers: { "User-Agent": USER_AGENT, Accept: "application/json" } }
     }
   );
   if (!response.ok) throw new Error(`Odesli lookup failed (${response.status}).`);

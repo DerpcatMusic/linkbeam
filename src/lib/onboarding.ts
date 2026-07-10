@@ -1,4 +1,5 @@
 import { passwordAuthConfigured } from "@lib/admin-session";
+import { DEFAULT_WORKER_NAME } from "@lib/brand";
 import { listLinks } from "@lib/db";
 import type { RuntimeEnv } from "@lib/runtime";
 import {
@@ -56,8 +57,6 @@ export interface OnboardingStatus {
   publicBaseUrl: string;
   isDev: boolean;
 }
-
-const DEFAULT_WORKER_NAME = "beamlink";
 
 export function workerNameFromEnv(env?: Pick<Env, "WORKER_NAME">): string {
   const configured = env?.WORKER_NAME?.trim();

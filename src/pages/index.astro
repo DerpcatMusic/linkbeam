@@ -2,9 +2,10 @@
 import MarketingLayout from "@layouts/MarketingLayout.astro";
 import { ensureDemoSmartLink } from "@lib/demo-link";
 import { getRuntimeEnv } from "@lib/runtime";
+import { DOCS_BASE_URL, PRODUCT_NAME, PRODUCT_SLUG, REPOSITORY_URL } from "@lib/brand";
 
-const githubUrl = "https://github.com/DerpcatMusic/beamlink";
-const docsUrl = "https://derpcatmusic.github.io/beamlink/ai.html";
+const githubUrl = REPOSITORY_URL;
+const docsUrl = `${DOCS_BASE_URL}/ai.html`;
 const demoLink = await ensureDemoSmartLink(getRuntimeEnv(Astro));
 const demoHref = `/${demoLink.slug}`;
 const demoDisplayUrl = `${Astro.url.host}/${demoLink.slug}`;
@@ -51,12 +52,12 @@ const compare = [
 ];
 ---
 
-<MarketingLayout title="Beamlink — one fast link for your music release">
+<MarketingLayout title={`${PRODUCT_NAME} — one fast link for your music release`}>
   <header class="m-nav">
     <div class="m-shell m-nav-inner">
-      <a class="m-logo" href="/" aria-label="Beamlink home">
+      <a class="m-logo" href="/" aria-label={`${PRODUCT_NAME} home`}>
         <span class="m-logo-mark" aria-hidden="true"></span>
-        beamlink
+        {PRODUCT_NAME.toLowerCase()}
       </a>
       <nav class="m-nav-links" aria-label="Primary">
         <a href="#does">What it does</a>
@@ -103,7 +104,7 @@ const compare = [
             <a class="m-btn m-btn-secondary" href="/admin">Explore the admin</a>
           </div>
 
-          <div class="m-proof" aria-label="What Beamlink ships">
+          <div class="m-proof" aria-label={`What ${PRODUCT_NAME} ships`}>
             <span>Edge-rendered HTML</span>
             <span>Server-side Meta events</span>
             <span>Your Cloudflare account</span>
@@ -121,7 +122,7 @@ const compare = [
               class="m-live-frame"
               data-live-frame
               src={`${demoHref}?embed=1`}
-              title="Embedded Beamlink smartlink demo"
+              title={`Embedded ${PRODUCT_NAME} smartlink demo`}
               loading="eager"
             ></iframe>
           </div>
@@ -181,8 +182,8 @@ const compare = [
 
         <div class="m-compare" data-reveal>
           <table>
-            <caption class="visually-hidden">Beamlink compared with hosted smartlink services</caption>
-            <thead><tr><th scope="col">Capability</th><th scope="col" class="is-us">Beamlink</th><th scope="col">Hosted services</th></tr></thead>
+            <caption class="visually-hidden">{PRODUCT_NAME} compared with hosted smartlink services</caption>
+            <thead><tr><th scope="col">Capability</th><th scope="col" class="is-us">{PRODUCT_NAME}</th><th scope="col">Hosted services</th></tr></thead>
             <tbody>{compare.map((row) => <tr><th scope="row">{row.label}</th><td class="m-us">{row.us}</td><td class="m-them">{row.them}</td></tr>)}</tbody>
           </table>
         </div>
@@ -208,11 +209,11 @@ const compare = [
         <div class="m-terminal" data-reveal>
           <div class="m-terminal-bar" aria-hidden="true">
             <i></i><i></i><i></i>
-            <span>~/beamlink</span>
+            <span>~/{PRODUCT_SLUG}</span>
           </div>
           <pre class="m-code"><code><span class="m-comment"># clone it and boot the local edge</span>
-<span class="m-prompt">$</span> git clone https://github.com/DerpcatMusic/beamlink
-<span class="m-prompt">$</span> cd beamlink && bun install
+<span class="m-prompt">$</span> git clone {REPOSITORY_URL}
+<span class="m-prompt">$</span> cd {PRODUCT_SLUG} && bun install
 <span class="m-prompt">$</span> wrangler d1 migrations apply DB --local
 <span class="m-prompt">$</span> bun run dev
 <span class="m-comment">➜ running at http://localhost:4321</span></code></pre>
@@ -242,7 +243,7 @@ const compare = [
     <div class="m-shell m-footer-inner">
       <a class="m-footer-brand" href="/">
         <span class="m-logo-mark" aria-hidden="true"></span>
-        beamlink
+        {PRODUCT_NAME.toLowerCase()}
       </a>
       <nav aria-label="Footer">
         <a href={githubUrl} target="_blank" rel="noopener noreferrer">GitHub</a>

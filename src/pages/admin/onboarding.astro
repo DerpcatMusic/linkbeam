@@ -19,6 +19,7 @@ import {
 import { getMetaAccessToken, getMetaPixelId, getSetting } from "@lib/settings";
 import { getRuntimeEnv, publicBaseUrl, requireAdmin } from "@lib/runtime";
 import { adminPasswordHashKind } from "@lib/admin-session";
+import { PRODUCT_NAME } from "@lib/brand";
 
 const env = getRuntimeEnv(Astro);
 const blocked = await requireAdmin(Astro.request, env);
@@ -86,11 +87,11 @@ function stepHref(stepId: OnboardingStepId): string {
 }
 ---
 
-<AppLayout title="Setup · Beamlink">
+<AppLayout title={`Setup · ${PRODUCT_NAME}`}>
   <main class="admin-page shell onboarding-page">
     <header class="admin-header">
       <div>
-        <p class="eyebrow">Beamlink</p>
+        <p class="eyebrow">{PRODUCT_NAME}</p>
         <h1>Self-host setup</h1>
         <p class="lede muted">Configure Cloudflare resources, secrets, and your first link.</p>
       </div>
@@ -125,9 +126,9 @@ function stepHref(stepId: OnboardingStepId): string {
 
     {step === "welcome" && (
       <section class="admin-panel onboarding-step">
-        <h2>What Beamlink needs</h2>
+        <h2>What {PRODUCT_NAME} needs</h2>
         <p class="step-lede">
-          Beamlink runs entirely on Cloudflare Workers. You bring a Cloudflare account, wire up D1/KV/R2/Queues,
+          {PRODUCT_NAME} runs entirely on Cloudflare Workers. You bring a Cloudflare account, wire up D1/KV/R2/Queues,
           set Meta and optional Spotify secrets, then create smartlinks that fans open from ads.
         </p>
         <ul class="checklist">
@@ -405,7 +406,7 @@ wrangler secret put ADMIN_SESSION_SECRET`}</code></pre>
       <section class="admin-panel onboarding-step">
         <h2>Setup complete</h2>
         <p class="step-lede">
-          Beamlink is configured. Create links, wire them into Meta campaigns, and check analytics daily to steer spend.
+          {PRODUCT_NAME} is configured. Create links, wire them into Meta campaigns, and check analytics daily to steer spend.
         </p>
 
         <div class="metric-strip">

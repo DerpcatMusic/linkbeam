@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { PRODUCT_NAME } from "@lib/brand";
 
 export interface LayoutHeadProps {
   title: string;
@@ -35,9 +36,9 @@ const {
 } = Astro.props;
 
 function formatPageTitle(raw: string): string {
-  if (/^Beamlink\s[—-]\s/.test(raw)) return raw;
-  const cleaned = raw.replace(/\s*·\s*Beamlink\s*$/i, "").trim();
-  return `Beamlink — ${cleaned}`;
+  if (new RegExp(`^${PRODUCT_NAME}\\s[—-]\\s`).test(raw)) return raw;
+  const cleaned = raw.replace(new RegExp(`\\s*·\\s*${PRODUCT_NAME}\\s*$`, "i"), "").trim();
+  return `${PRODUCT_NAME} — ${cleaned}`;
 }
 
 const pageTitle = formatPageTitle(title);
