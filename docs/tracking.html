@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Meta tracking — Beamlink docs</title>
+    <title>Meta tracking — Linkbeam docs</title>
     <meta
       name="description"
-      content="First-party Meta Pixel and Conversions API setup for Beamlink smartlinks."
+      content="First-party Meta Pixel and Conversions API setup for Linkbeam smartlinks."
     />
     <link rel="stylesheet" href="assets/docs.css" />
   </head>
@@ -15,12 +15,12 @@
       <div class="shell site-header-inner">
         <a class="logo" href="index.html">
           <span class="logo-mark" aria-hidden="true"></span>
-          beamlink
+          linkbeam
         </a>
         <nav class="header-links" aria-label="Header">
           <a href="index.html">Home</a>
-          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
-          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+          <a href="https://github.com/DerpcatMusic/linkbeam">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/linkbeam">Grab the code</a>
         </nav>
       </div>
     </header>
@@ -40,7 +40,7 @@
       <main class="content">
         <h1>Meta tracking</h1>
         <p class="lede">
-          Beamlink sends conversion events from your domain — server-side via Meta Conversions API (CAPI)
+          Linkbeam sends conversion events from your domain — server-side via Meta Conversions API (CAPI)
           with browser deduplication. No third-party pixel scripts on fan pages.
         </p>
 
@@ -77,7 +77,7 @@
               </tr>
               <tr>
                 <td><code>_dg_vid</code></td>
-                <td>Beamlink visitor ID for analytics</td>
+                <td>Linkbeam visitor ID for analytics</td>
               </tr>
               <tr>
                 <td><code>_dg_attr</code></td>
@@ -145,14 +145,14 @@
           <li><strong>Events not in Meta:</strong> Check Test Events with <code>META_TEST_EVENT_CODE</code>; verify token has CAPI permissions.</li>
           <li><strong>Low match quality:</strong> Ensure <code>fbclid</code> reaches the smartlink URL; confirm <code>_fbc</code> cookie is set.</li>
           <li><strong>Retries piling up:</strong> Inspect CAPI log in admin settings; check queue DLQ in Cloudflare dashboard.</li>
-          <li><strong>Numbers differ from Meta:</strong> Beamlink excludes bots; Meta may attribute differently. Admin shows what was actually sent.</li>
+          <li><strong>Numbers differ from Meta:</strong> Linkbeam excludes bots; Meta may attribute differently. Admin shows what was actually sent.</li>
         </ul>
       </main>
     </div>
 
     <footer class="site-footer">
       <div class="shell site-footer-inner">
-        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <span>Linkbeam — MIT · self-hosted on Cloudflare</span>
         <a href="index.html">Back to home</a>
       </div>
     </footer>

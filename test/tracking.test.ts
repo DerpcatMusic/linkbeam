@@ -706,7 +706,7 @@ describe("Meta CAPI payload", () => {
     } as const;
 
     await processConversionQueueBatch({
-      queue: "beamlink-conversions",
+      queue: "linkbeam-conversions",
       metadata: { metrics: { backlogCount: 1, backlogBytes: 1 } },
       messages: [{
         id: "msg_1",
@@ -754,7 +754,7 @@ describe("Meta CAPI payload", () => {
     const retry = vi.fn();
 
     await processConversionQueueBatch({
-      queue: "beamlink-conversions",
+      queue: "linkbeam-conversions",
       metadata: { metrics: { backlogCount: 1, backlogBytes: 1 } },
       messages: [{
         id: "msg_1",

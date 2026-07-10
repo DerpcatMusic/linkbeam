@@ -1,20 +1,20 @@
-# Beamlink
+# Linkbeam
 
 > Open-source, self-hosted music smartlinks and pre-release pages on Cloudflare Workers — edge-rendered fan pages, first-party Meta CAPI, and campaign analytics for label operators.
 
-Beamlink is not an npm library you import. You clone the repo, bind your Cloudflare account (D1, KV, R2, Queues), and deploy a Worker. Fans hit `/:slug`; outbound clicks go through `/out/:slug/:platform` with server-side tracking.
+Linkbeam is not an npm library you import. You clone the repo, bind your Cloudflare account (D1, KV, R2, Queues), and deploy a Worker. Fans hit `/:slug`; outbound clicks go through `/out/:slug/:platform` with server-side tracking.
 
 ## Docs
 
-- [AI integration prompt](https://derpcatmusic.github.io/beamlink/ai.html): Copy-paste prompt for Cursor, Claude Code, Codex, Copilot
-- [Home](https://derpcatmusic.github.io/beamlink/): Marketing landing and live demo
-- [Getting started](https://derpcatmusic.github.io/beamlink/getting-started.html): Install, Cloudflare resources, migrations, deploy
-- [Configuration](https://derpcatmusic.github.io/beamlink/configuration.html): wrangler.jsonc bindings, vars, secrets, routes
-- [Admin workflow](https://derpcatmusic.github.io/beamlink/admin.html): Import tracks, publish pre-release/live links, analytics
-- [Meta tracking](https://derpcatmusic.github.io/beamlink/tracking.html): Pixel, CAPI, cookies, event pipeline, troubleshooting
+- [AI integration prompt](https://derpcatmusic.github.io/linkbeam/ai.html): Copy-paste prompt for Cursor, Claude Code, Codex, Copilot
+- [Home](https://derpcatmusic.github.io/linkbeam/): Marketing landing and live demo
+- [Getting started](https://derpcatmusic.github.io/linkbeam/getting-started.html): Install, Cloudflare resources, migrations, deploy
+- [Configuration](https://derpcatmusic.github.io/linkbeam/configuration.html): wrangler.jsonc bindings, vars, secrets, routes
+- [Admin workflow](https://derpcatmusic.github.io/linkbeam/admin.html): Import tracks, publish pre-release/live links, analytics
+- [Meta tracking](https://derpcatmusic.github.io/linkbeam/tracking.html): Pixel, CAPI, cookies, event pipeline, troubleshooting
 
 ## Optional
 
-- [llms-full.txt](https://derpcatmusic.github.io/beamlink/llms-full.txt): Full docs bundle for one-shot agent context
-- [GitHub repository](https://github.com/DerpcatMusic/beamlink): Source code, issues, MIT license
+- [llms-full.txt](https://derpcatmusic.github.io/linkbeam/llms-full.txt): Full docs bundle for one-shot agent context
+- [GitHub repository](https://github.com/DerpcatMusic/linkbeam): Source code, issues, MIT license
 - [Live demo](https://links.dolmengatemedia.com/demo): Example smartlink on a production deploy

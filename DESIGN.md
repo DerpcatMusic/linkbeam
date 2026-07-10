@@ -1,12 +1,12 @@
-# Beamlink Design System
+# Linkbeam Design System
 
-Brand tokens and surface rules for the Beamlink admin (instrument panel) and marketing shell. Public fan link pages follow **release-first** branding per `PRODUCT.md` — artwork-derived palettes only, no Beamlink marks.
+Brand tokens and surface rules for the Linkbeam admin (instrument panel) and marketing shell. Public fan link pages follow **release-first** branding per `PRODUCT.md` — artwork-derived palettes only, no Linkbeam marks.
 
 ## Brand
 
 | Token | Value |
 |-------|-------|
-| Name | Beamlink |
+| Name | Linkbeam |
 | Domain | GitHub project home |
 | Tagline | Fast first-party music smartlinks |
 | Voice | Precise, fast, understated |
@@ -55,9 +55,9 @@ When a public marketing or docs surface ships, use:
 
 ## Logo & wordmark
 
-Text wordmark **Beamlink** in admin eyebrow (`login.astro`, list header). No logo asset required for v1; lowercase `beamlink` in URLs and package names.
+Text wordmark **Linkbeam** in admin eyebrow (`login.astro`, list header). No logo asset required for v1; lowercase `linkbeam` in URLs and package names.
 
 ## Public pages (do not)
 
-- No Beamlink wordmark, footer, or “powered by” on `/:slug` fan pages.
+- No Linkbeam wordmark, footer, or “powered by” on `/:slug` fan pages.
 - Palette comes from track artwork via `parseTrackPalette()`.

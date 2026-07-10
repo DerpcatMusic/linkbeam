@@ -1,6 +1,6 @@
-# Beamlink
+# Linkbeam
 
-**Beamlink on GitHub** — Fast first-party music smartlinks. Open source, self-hosted on Cloudflare.
+**Linkbeam on GitHub** — Fast first-party music smartlinks. Open source, self-hosted on Cloudflare.
 
 ## Register
 
@@ -8,7 +8,7 @@ product
 
 ## Users
 
-- **Label owner / operator** — self-hosts Beamlink, creates smartlinks and pre-release pages, wires them into Meta ad campaigns, checks analytics daily to steer spend. Fluent in tools like SubmitHub, Linkfire, feature.fm; expects dense, fast, no-hand-holding UI.
+- **Label owner / operator** — self-hosts Linkbeam, creates smartlinks and pre-release pages, wires them into Meta ad campaigns, checks analytics daily to steer spend. Fluent in tools like SubmitHub, Linkfire, feature.fm; expects dense, fast, no-hand-holding UI.
 - **Fans** — arrive on the public link page from an Instagram/Facebook ad on a phone, in a feed-scrolling mindset. One job: get them to tap through to a streaming destination in under three seconds.
 
 ## Product Purpose
@@ -17,7 +17,7 @@ An open-source, self-hosted music smartlink + pre-release tool on Cloudflare Wor
 
 ## Brand Personality
 
-Precise, fast, understated. The admin is an instrument panel, not a marketing site. The public page is a stage for the release: the track's own artwork and colors carry the identity; Beamlink itself disappears.
+Precise, fast, understated. The admin is an instrument panel, not a marketing site. The public page is a stage for the release: the track's own artwork and colors carry the identity; Linkbeam itself disappears.
 
 ## Anti-references
 
@@ -27,9 +27,9 @@ Precise, fast, understated. The admin is an instrument panel, not a marketing si
 
 ## Design Principles
 
-1. **The release is the brand.** Public pages derive their palette from the track artwork (Spotify visualIdentity colors); Beamlink contributes typography and hierarchy, never competing decoration. No Beamlink or operator branding on public fan pages.
+1. **The release is the brand.** Public pages derive their palette from the track artwork (Spotify visualIdentity colors); Linkbeam contributes typography and hierarchy, never competing decoration. No Linkbeam or operator branding on public fan pages.
 2. **Speed is the feature.** Every byte of client JS must justify itself; server-rendered HTML is the default answer. No client framework, no chart library.
-3. **Density over ceremony (admin).** Linear/Stripe-dashboard register: compact tables, tabular numbers, keyboard-reachable actions, no orchestrated animations. Beamlink branding lives here only.
+3. **Density over ceremony (admin).** Linear/Stripe-dashboard register: compact tables, tabular numbers, keyboard-reachable actions, no orchestrated animations. Linkbeam branding lives here only.
 4. **Numbers must be trustworthy.** Metrics shown must match what was actually sent to Meta; bot traffic excluded; failures visible in the UI, never silent.
 5. **Works without JS, better with it.** Charts, countdowns, and forms render server-side; small vanilla scripts enhance them.
 
@@ -41,4 +41,4 @@ Precise, fast, understated. The admin is an instrument panel, not a marketing si
 
 ## Open Source
 
-Beamlink is designed to be forked and self-hosted. Operators bring their own Cloudflare account, D1 database, KV namespace, and Meta credentials. The canonical project home is [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMusic/beamlink).
+Linkbeam is designed to be forked and self-hosted. Operators bring their own Cloudflare account, D1 database, KV namespace, and Meta credentials. The canonical project home is [github.com/DerpcatMusic/linkbeam](https://github.com/DerpcatMusic/linkbeam).

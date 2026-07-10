@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "beamlink",
+  "name": "linkbeam",
   "main": "./src/worker.ts",
   "compatibility_date": "2026-06-15",
   "workers_dev": true,
@@ -10,7 +10,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "beamlink",
+      "database_name": "linkbeam",
       "database_id": "REPLACE_WITH_D1_DATABASE_ID"
     }
   ],
@@ -23,7 +23,7 @@
   "r2_buckets": [
     {
       "binding": "ARTWORK",
-      "bucket_name": "beamlink-artwork"
+      "bucket_name": "linkbeam-artwork"
     }
   ],
   // Enable this after the Cloudflare account has Workers Analytics Engine turned on:
@@ -31,29 +31,29 @@
   // "analytics_engine_datasets": [
   //   {
   //     "binding": "ANALYTICS",
-  //     "dataset": "beamlink_events"
+  //     "dataset": "linkbeam_events"
   //   }
   // ],
   "queues": {
     "producers": [
       {
         "binding": "CONVERSION_EVENTS",
-        "queue": "beamlink-conversions"
+        "queue": "linkbeam-conversions"
       }
     ],
     "consumers": [
       {
-        "queue": "beamlink-conversions",
+        "queue": "linkbeam-conversions",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
         "max_retries": 5,
-        "dead_letter_queue": "beamlink-conversions-dlq"
+        "dead_letter_queue": "linkbeam-conversions-dlq"
       }
     ]
   },
   "vars": {
     "PUBLIC_BASE_URL": "",
-    "WORKER_NAME": "beamlink",
+    "WORKER_NAME": "linkbeam",
     "META_API_VERSION": "v23.0",
     "META_TEST_EVENT_CODE": "",
     // Relative optimization value per streaming conversion (enables value-based

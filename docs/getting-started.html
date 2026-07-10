@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Getting started — Beamlink docs</title>
+    <title>Getting started — Linkbeam docs</title>
     <meta
       name="description"
-      content="Install Beamlink on your own Cloudflare account: resources, migrations, secrets, and first deploy."
+      content="Install Linkbeam on your own Cloudflare account: resources, migrations, secrets, and first deploy."
     />
     <link rel="stylesheet" href="assets/docs.css" />
   </head>
@@ -15,12 +15,12 @@
       <div class="shell site-header-inner">
         <a class="logo" href="index.html">
           <span class="logo-mark" aria-hidden="true"></span>
-          beamlink
+          linkbeam
         </a>
         <nav class="header-links" aria-label="Header">
           <a href="index.html">Home</a>
-          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
-          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+          <a href="https://github.com/DerpcatMusic/linkbeam">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/linkbeam">Grab the code</a>
         </nav>
       </div>
     </header>
@@ -40,7 +40,7 @@
       <main class="content">
         <h1>Getting started</h1>
         <p class="lede">
-          Beamlink runs on your Cloudflare account as a Worker with D1, KV, R2, and Queues.
+          Linkbeam runs on your Cloudflare account as a Worker with D1, KV, R2, and Queues.
           This guide gets you from clone to a working local dev environment.
         </p>
 
@@ -53,19 +53,19 @@
 
         <h2>1. Clone and install</h2>
         <div class="terminal">
-          <pre><code>git clone https://github.com/DerpcatMusic/beamlink
-cd beamlink
+          <pre><code>git clone https://github.com/DerpcatMusic/linkbeam
+cd linkbeam
 bun install</code></pre>
         </div>
 
         <h2>2. Create Cloudflare resources</h2>
-        <p>Create the bindings Beamlink expects, then copy the IDs into <code>wrangler.jsonc</code>.</p>
+        <p>Create the bindings Linkbeam expects, then copy the IDs into <code>wrangler.jsonc</code>.</p>
         <div class="terminal">
-          <pre><code>wrangler d1 create beamlink
+          <pre><code>wrangler d1 create linkbeam
 wrangler kv namespace create LINK_CACHE
-wrangler r2 bucket create beamlink-artwork
-wrangler queues create beamlink-conversions
-wrangler queues create beamlink-conversions-dlq</code></pre>
+wrangler r2 bucket create linkbeam-artwork
+wrangler queues create linkbeam-conversions
+wrangler queues create linkbeam-conversions-dlq</code></pre>
         </div>
         <p>
           Replace <code>REPLACE_WITH_D1_DATABASE_ID</code> and
@@ -129,7 +129,7 @@ bun run deploy</code></pre>
 
     <footer class="site-footer">
       <div class="shell site-footer-inner">
-        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <span>Linkbeam — MIT · self-hosted on Cloudflare</span>
         <a href="index.html">Back to home</a>
       </div>
     </footer>

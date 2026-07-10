@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Configuration — Beamlink docs</title>
+    <title>Configuration — Linkbeam docs</title>
     <meta
       name="description"
-      content="wrangler.jsonc bindings, environment variables, secrets, and routes for Beamlink."
+      content="wrangler.jsonc bindings, environment variables, secrets, and routes for Linkbeam."
     />
     <link rel="stylesheet" href="assets/docs.css" />
   </head>
@@ -15,12 +15,12 @@
       <div class="shell site-header-inner">
         <a class="logo" href="index.html">
           <span class="logo-mark" aria-hidden="true"></span>
-          beamlink
+          linkbeam
         </a>
         <nav class="header-links" aria-label="Header">
           <a href="index.html">Home</a>
-          <a href="https://github.com/DerpcatMusic/beamlink">GitHub</a>
-          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/beamlink">Grab the code</a>
+          <a href="https://github.com/DerpcatMusic/linkbeam">GitHub</a>
+          <a class="btn btn-beam" href="https://github.com/DerpcatMusic/linkbeam">Grab the code</a>
         </nav>
       </div>
     </header>
@@ -40,7 +40,7 @@
       <main class="content">
         <h1>Configuration</h1>
         <p class="lede">
-          Beamlink is configured through <code>wrangler.jsonc</code> for infrastructure bindings and
+          Linkbeam is configured through <code>wrangler.jsonc</code> for infrastructure bindings and
           Wrangler secrets for credentials. Vars are non-secret defaults you can commit.
         </p>
 
@@ -97,7 +97,7 @@
             <tbody>
               <tr>
                 <td><code>WORKER_NAME</code></td>
-                <td><code>beamlink</code></td>
+                <td><code>linkbeam</code></td>
                 <td>Prefix for D1/R2/queue resource names in onboarding snippets</td>
               </tr>
               <tr>
@@ -149,7 +149,7 @@
               <tr>
                 <td><code>META_ACCESS_TOKEN</code></td>
                 <td>For CAPI</td>
-                <td>Conversions API access token. Store only with <code>wrangler secret put META_ACCESS_TOKEN</code>; Beamlink never persists it in D1.</td>
+                <td>Conversions API access token. Store only with <code>wrangler secret put META_ACCESS_TOKEN</code>; Linkbeam never persists it in D1.</td>
               </tr>
               <tr>
                 <td><code>SPOTIFY_CLIENT_ID</code> / <code>SPOTIFY_CLIENT_SECRET</code></td>
@@ -234,7 +234,7 @@
 
     <footer class="site-footer">
       <div class="shell site-footer-inner">
-        <span>Beamlink — MIT · self-hosted on Cloudflare</span>
+        <span>Linkbeam — MIT · self-hosted on Cloudflare</span>
         <a href="index.html">Back to home</a>
       </div>
     </footer>

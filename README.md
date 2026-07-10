@@ -1,10 +1,12 @@
-# Beamlink
+# Linkbeam
 
 **Fast first-party music smartlinks** — self-hosted on Cloudflare Workers with edge-rendered link pages, first-party analytics, and server-side Meta Pixel/CAPI.
 
-**Documentation:** [derpcatmusic.github.io/beamlink](https://derpcatmusic.github.io/beamlink)  
-**AI setup prompt:** [derpcatmusic.github.io/beamlink/ai.html](https://derpcatmusic.github.io/beamlink/ai.html)  
-**Repository:** [github.com/DerpcatMusic/beamlink](https://github.com/DerpcatMusic/beamlink)
+**Documentation:** [derpcatmusic.github.io/linkbeam](https://derpcatmusic.github.io/linkbeam)
+
+**AI setup prompt:** [derpcatmusic.github.io/linkbeam/ai.html](https://derpcatmusic.github.io/linkbeam/ai.html)
+
+**Repository:** [github.com/DerpcatMusic/linkbeam](https://github.com/DerpcatMusic/linkbeam)
 
 ## Stack
 
@@ -19,7 +21,7 @@ Workers Analytics Engine is supported but optional (commented out in `wrangler.j
 
 ## Quick start
 
-See the [getting started guide](https://derpcatmusic.github.io/beamlink/getting-started.html) for full setup. Short version:
+See the [getting started guide](https://derpcatmusic.github.io/linkbeam/getting-started.html) for full setup. Short version:
 
 ```sh
 bun install
@@ -34,11 +36,11 @@ bun run smoke
 
 | Guide | Description |
 |-------|-------------|
-| [AI setup](https://derpcatmusic.github.io/beamlink/ai.html) | Copy-paste prompt for Cursor, Claude Code, Copilot |
-| [Getting started](https://derpcatmusic.github.io/beamlink/getting-started.html) | Install, resources, migrations, deploy |
-| [Configuration](https://derpcatmusic.github.io/beamlink/configuration.html) | Bindings, vars, secrets, routes |
-| [Admin workflow](https://derpcatmusic.github.io/beamlink/admin.html) | Create and publish smartlinks |
-| [Meta tracking](https://derpcatmusic.github.io/beamlink/tracking.html) | Pixel, CAPI, cookies, troubleshooting |
+| [AI setup](https://derpcatmusic.github.io/linkbeam/ai.html) | Copy-paste prompt for Cursor, Claude Code, Copilot |
+| [Getting started](https://derpcatmusic.github.io/linkbeam/getting-started.html) | Install, resources, migrations, deploy |
+| [Configuration](https://derpcatmusic.github.io/linkbeam/configuration.html) | Bindings, vars, secrets, routes |
+| [Admin workflow](https://derpcatmusic.github.io/linkbeam/admin.html) | Create and publish smartlinks |
+| [Meta tracking](https://derpcatmusic.github.io/linkbeam/tracking.html) | Pixel, CAPI, cookies, troubleshooting |
 
 ## Workflow
 

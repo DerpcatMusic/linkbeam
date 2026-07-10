@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "beamlink",
+      "name": "linkbeam",
       "dependencies": {
         "@astrojs/cloudflare": "^14",
         "astro": "^7",

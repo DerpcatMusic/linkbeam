@@ -1,8 +1,8 @@
-# Beamlink — full documentation bundle for AI agents
+# Linkbeam — full documentation bundle for AI agents
 
-Source: https://derpcatmusic.github.io/beamlink/llms-full.txt
+Source: https://derpcatmusic.github.io/linkbeam/llms-full.txt
 
-I want to self-host Beamlink — open-source music smartlinks on Cloudflare Workers — for my label. Analyze my project and recommend the best integration approach.
+I want to self-host Linkbeam — open-source music smartlinks on Cloudflare Workers — for my label. Analyze my project and recommend the best integration approach.
 
 ## My Project Context
 
@@ -10,15 +10,15 @@ I want to self-host Beamlink — open-source music smartlinks on Cloudflare Work
 
 ## Two Integration Approaches
 
-Beamlink is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SDK you npm-install.
+Linkbeam is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SDK you npm-install.
 
 ### Approach 1: Fresh self-host (RECOMMENDED)
 
 **Best for:** New operators with their own Cloudflare account and domain.
 
 **How it works:**
-1. Clone https://github.com/DerpcatMusic/beamlink
-2. Create Cloudflare resources: D1, KV (`LINK_CACHE`), R2 (`beamlink-artwork`), Queues (`beamlink-conversions` + DLQ)
+1. Clone https://github.com/DerpcatMusic/linkbeam
+2. Create Cloudflare resources: D1, KV (`LINK_CACHE`), R2 (`linkbeam-artwork`), Queues (`linkbeam-conversions` + DLQ)
 3. Fill placeholder IDs in `wrangler.jsonc`; set `PUBLIC_BASE_URL` to your domain
 4. Run `bun run db:migrate:local` then `bun run db:migrate`
 5. Set secrets: `META_PIXEL_ID`, `META_ACCESS_TOKEN` (optional: Spotify, Cloudflare Access, admin password)
@@ -33,18 +33,18 @@ Beamlink is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SD
 
 **How it works:**
 1. Use https://github.com/DerpcatMusic/music-shortlink as a deployment fork
-2. Develop features in the main `beamlink` repo
-3. Run `./scripts/sync-from-beamlink.sh` to pull product code while preserving `wrangler.jsonc` and domain config
+2. Develop features in the main `linkbeam` repo
+3. Run `./scripts/sync-from-linkbeam.sh` to pull product code while preserving `wrangler.jsonc` and domain config
 4. Deploy to your existing `links.*` domain
 
 ## Documentation (read before writing code)
 
-- Index: https://derpcatmusic.github.io/beamlink/llms.txt
-- Full bundle: https://derpcatmusic.github.io/beamlink/llms-full.txt
-- Getting started: https://derpcatmusic.github.io/beamlink/getting-started.html
-- Configuration: https://derpcatmusic.github.io/beamlink/configuration.html
-- Admin workflow: https://derpcatmusic.github.io/beamlink/admin.html
-- Meta tracking: https://derpcatmusic.github.io/beamlink/tracking.html
+- Index: https://derpcatmusic.github.io/linkbeam/llms.txt
+- Full bundle: https://derpcatmusic.github.io/linkbeam/llms-full.txt
+- Getting started: https://derpcatmusic.github.io/linkbeam/getting-started.html
+- Configuration: https://derpcatmusic.github.io/linkbeam/configuration.html
+- Admin workflow: https://derpcatmusic.github.io/linkbeam/admin.html
+- Meta tracking: https://derpcatmusic.github.io/linkbeam/tracking.html
 
 ## Stack Reference
 
@@ -57,12 +57,12 @@ Beamlink is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SD
 
 ## What I need you to do
 
-1. Fetch https://derpcatmusic.github.io/beamlink/llms-full.txt (or the doc pages above) for grounded context
+1. Fetch https://derpcatmusic.github.io/linkbeam/llms-full.txt (or the doc pages above) for grounded context
 2. Recommend Approach 1 or 2 based on my project context
 3. Walk me through `wrangler.jsonc` setup with my Cloudflare resource IDs
 4. Configure Meta CAPI secrets and validate with the onboarding pixel test
 5. Help me create and publish my first smartlink from a Spotify or TooLost URL
-6. Do not add client frameworks to fan pages — Beamlink is server-rendered HTML by design
+6. Do not add client frameworks to fan pages — Linkbeam is server-rendered HTML by design
 
 ## Constraints
 
@@ -75,8 +75,8 @@ Beamlink is a full-stack Worker app (Astro 7 + D1 + KV + R2 + Queues), not an SD
 
 # Getting started (summary)
 
-- Clone https://github.com/DerpcatMusic/beamlink, bun install
-- Create D1, KV LINK_CACHE, R2 beamlink-artwork, Queues beamlink-conversions + DLQ
+- Clone https://github.com/DerpcatMusic/linkbeam, bun install
+- Create D1, KV LINK_CACHE, R2 linkbeam-artwork, Queues linkbeam-conversions + DLQ
 - Fill wrangler.jsonc IDs, bun run db:migrate:local && bun run db:migrate
 - Secrets: META_PIXEL_ID, META_ACCESS_TOKEN, optional Spotify + admin auth
 - bun run dev, open /admin/onboarding, bun run deploy

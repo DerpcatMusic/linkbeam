@@ -5,10 +5,36 @@ import pkg from "../package.json";
 import marketingLayout from "../src/layouts/MarketingLayout.astro?raw";
 import marketingCss from "../src/styles/marketing.css?raw";
 import marketingPage from "../src/pages/index.astro?raw";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const globalCss = readFileSync(resolve(import.meta.dirname, "../src/styles/global.css"), "utf8");
+const repoRoot = resolve(import.meta.dirname, "..");
+
+function staleBrandMatches(): string[] {
+  const matches: string[] = [];
+  const allowed = /(?:--beamlink-|\.beamlink-|Legacy Beamlink|sync-from-beamlink\.sh|BEAMLINK_DIR)/i;
+  const visit = (relative: string) => {
+    for (const entry of readdirSync(resolve(repoRoot, relative), { withFileTypes: true })) {
+      const next = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (["node_modules", ".git", ".astro", "dist", ".worktrees"].includes(entry.name) || next === "docs/superpowers") continue;
+        visit(next);
+      } else if (/\.(?:astro|css|html|md|mjs|jsonc|svg|ts|txt)$/.test(entry.name) && next !== "test/project-cleanliness.test.ts") {
+        readFileSync(resolve(repoRoot, next), "utf8").split("\n").forEach((line, index) => {
+          if (/beamlink/i.test(line) && !allowed.test(line)) matches.push(`${next}:${index + 1}`);
+        });
+      }
+    }
+  };
+  for (const root of ["src", "docs", "test"]) visit(root);
+  for (const file of ["README.md", "AGENTS.md", "PRODUCT.md", "DESIGN.md", "wrangler.jsonc", "astro.config.mjs"]) {
+    readFileSync(resolve(repoRoot, file), "utf8").split("\n").forEach((line, index) => {
+      if (/beamlink/i.test(line) && !allowed.test(line)) matches.push(`${file}:${index + 1}`);
+    });
+  }
+  return matches;
+}
 
 describe("project cleanup", () => {
   it("does not keep a user-managed Astro SESSION namespace in source config", () => {
@@ -42,5 +68,15 @@ describe("project cleanup", () => {
     expect(globalCss).toContain("--linkbeam-bg:");
     expect(globalCss).toContain("--beamlink-bg: var(--linkbeam-bg)");
     expect(globalCss).not.toMatch(/var\(--beamlink-/);
+  });
+
+  it("keeps the retired product name inside compatibility and historical files", () => {
+    expect(staleBrandMatches()).toEqual([]);
+  });
+
+  it("uses Linkbeam defaults for new installs", () => {
+    expect(wrangler).toContain('"name": "linkbeam"');
+    expect(wrangler).toContain('"bucket_name": "linkbeam-artwork"');
+    expect(wrangler).toContain('"queue": "linkbeam-conversions"');
   });
 });

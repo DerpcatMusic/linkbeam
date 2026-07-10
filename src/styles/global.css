@@ -1,5 +1,5 @@
 :root {
-  /* ── Beamlink design tokens (canonical) ─────────────────────────────────── */
+  /* ── Linkbeam design tokens (canonical) ─────────────────────────────────── */
 
   /* Color — admin instrument panel (default surface) */
   --linkbeam-bg: oklch(0.125 0.005 265);

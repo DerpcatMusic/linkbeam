@@ -1,4 +1,4 @@
-# Beamlink — agent instructions
+# Linkbeam — agent instructions
 
 Open-source music smartlinks on Cloudflare Workers. Develop here; deployment forks sync from this repo.
 
@@ -18,10 +18,10 @@ bun run deploy       # build + wrangler deploy
 
 For self-hosting with a coding assistant, use the copy-paste prompt:
 
-- **Web UI:** https://derpcatmusic.github.io/beamlink/ai.html
+- **Web UI:** https://derpcatmusic.github.io/linkbeam/ai.html
 - **Raw prompt:** `docs/ai-integration-prompt.txt`
-- **Doc index:** https://derpcatmusic.github.io/beamlink/llms.txt
-- **Full bundle:** https://derpcatmusic.github.io/beamlink/llms-full.txt
+- **Doc index:** https://derpcatmusic.github.io/linkbeam/llms.txt
+- **Full bundle:** https://derpcatmusic.github.io/linkbeam/llms-full.txt
 
 ## Architecture
 
@@ -40,8 +40,8 @@ For self-hosting with a coding assistant, use the copy-paste prompt:
 
 ## Deployment fork
 
-Personal Dolmen Gate deploy: https://github.com/DerpcatMusic/music-shortlink — sync via `./scripts/sync-from-beamlink.sh`, keep fork `wrangler.jsonc` and domain.
+Personal Dolmen Gate deploy: https://github.com/DerpcatMusic/music-shortlink — sync via `./scripts/sync-from-linkbeam.sh`, keep fork `wrangler.jsonc` and domain.
 
 ## Docs
 
-https://derpcatmusic.github.io/beamlink/
+https://derpcatmusic.github.io/linkbeam/
