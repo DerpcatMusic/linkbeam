@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ImportedTrack } from "@lib/types";
+import { safeFetchResponse } from "@lib/safe-fetch";
 import { normalizeIsrc } from "@lib/id";
 import { mergeImported } from "./shared";
 import { importOdesli } from "./odesli";
@@ -17,7 +18,9 @@ const deezerTrackSchema = z.object({
 
 export async function importFromIsrc(input: string): Promise<ImportedTrack> {
   const isrc = normalizeIsrc(input);
-  const response = await fetch(`https://api.deezer.com/track/isrc:${isrc}`);
+  const response = await safeFetchResponse(`https://api.deezer.com/track/isrc:${isrc}`, {
+    maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["api.deezer.com"]
+  });
   const data = deezerTrackSchema.parse(await response.json());
   if (data.error) throw new Error(data.error.message || "ISRC not found on Deezer.");
 

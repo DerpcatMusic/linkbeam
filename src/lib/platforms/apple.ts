@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ImportedTrack } from "@lib/types";
+import { safeFetchResponse } from "@lib/safe-fetch";
 import { normalizeTrackText } from "./shared";
 
 const appleSearchSchema = z.object({
@@ -22,7 +23,9 @@ export async function importApple(sourceUrl: string): Promise<ImportedTrack> {
   const id = appleIdFromUrl(sourceUrl);
   if (!id) return { provider: "apple", sourceUrl, destinations: { apple: sourceUrl } };
 
-  const response = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(id)}&entity=song`);
+  const response = await safeFetchResponse(`https://itunes.apple.com/lookup?id=${encodeURIComponent(id)}&entity=song`, {
+    maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["itunes.apple.com"]
+  });
   if (!response.ok) return { provider: "apple", sourceUrl, destinations: { apple: sourceUrl } };
   const data = appleSearchSchema.parse(await response.json());
   const song = data.results.find((result) => result.trackName) ?? data.results[0];
@@ -48,8 +51,9 @@ export async function searchAppleMusic(title: string, artist: string): Promise<s
   const term = `${primaryArtist} ${title}`.trim();
   if (!term) return undefined;
 
-  const response = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=8`
+  const response = await safeFetchResponse(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=8`,
+    { maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["itunes.apple.com"] }
   );
   if (!response.ok) return undefined;
 

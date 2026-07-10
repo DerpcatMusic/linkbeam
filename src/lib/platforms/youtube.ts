@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ImportedTrack } from "@lib/types";
+import { safeFetchResponse } from "@lib/safe-fetch";
 import { normalizeTrackText, parseArtistTitle } from "./shared";
 
 const YT_MUSIC_SONGS_FILTER = "EgWKAQIIAWoKEAkQAxAFEAoQBA";
@@ -108,20 +109,19 @@ export async function searchYouTubeMusic(title: string, artist: string): Promise
   const term = `${primaryArtist} ${title}`.trim();
   if (!term) return undefined;
 
-  const response = await fetch("https://www.youtube.com/youtubei/v1/search?prettyPrint=false", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      context: {
-        client: {
-          clientName: "WEB_REMIX",
-          clientVersion: "1.20240401.00.00",
-          hl: "en"
-        }
-      },
-      query: term,
-      params: YT_MUSIC_SONGS_FILTER
-    })
+  const response = await safeFetchResponse("https://www.youtube.com/youtubei/v1/search?prettyPrint=false", {
+    maxBytes: 2_000_000,
+    timeoutMs: 8_000,
+    allowedHosts: ["www.youtube.com"],
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        context: { client: { clientName: "WEB_REMIX", clientVersion: "1.20240401.00.00", hl: "en" } },
+        query: term,
+        params: YT_MUSIC_SONGS_FILTER
+      })
+    }
   });
   if (!response.ok) return undefined;
 
@@ -140,7 +140,11 @@ export async function searchYouTubeMusic(title: string, artist: string): Promise
 }
 
 export async function importYouTube(sourceUrl: string): Promise<ImportedTrack> {
-  const response = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(sourceUrl)}`);
+  const response = await safeFetchResponse(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(sourceUrl)}`, {
+    maxBytes: 2_000_000,
+    timeoutMs: 8_000,
+    allowedHosts: ["www.youtube.com"]
+  });
   if (!response.ok) return { provider: "youtube", sourceUrl, destinations: { youtube: sourceUrl } };
 
   const data = youtubeOembedSchema.parse(await response.json());

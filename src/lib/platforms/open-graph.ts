@@ -1,10 +1,14 @@
 import type { ImportedTrack } from "@lib/types";
+import { safeFetchText } from "@lib/safe-fetch";
 import { metaContent, parseArtistTitle } from "./shared";
 
 export async function importOpenGraph(sourceUrl: string): Promise<ImportedTrack> {
-  const response = await fetch(sourceUrl, { headers: { "user-agent": "beamlink/0.1" } });
+  const { response, text: html } = await safeFetchText(sourceUrl, {
+    maxBytes: 2_000_000,
+    timeoutMs: 8_000,
+    init: { headers: { "user-agent": "beamlink/0.1" } }
+  });
   if (!response.ok) return { provider: "open_graph", sourceUrl, destinations: { other: sourceUrl } };
-  const html = await response.text();
   const title = metaContent(html, "og:title") ?? undefined;
   const parsed = parseArtistTitle(title);
 

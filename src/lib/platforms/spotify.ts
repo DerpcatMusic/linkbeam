@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ImportedTrack, TrackPalette } from "@lib/types";
 import type { RuntimeEnv } from "@lib/runtime";
+import { safeFetchResponse } from "@lib/safe-fetch";
 import { parseNextData, pickLargestEmbedImage, pickLargestImage } from "./shared";
 
 const rgbaColorSchema = z.object({
@@ -131,8 +132,9 @@ export async function importSpotify(env: RuntimeEnv, sourceUrl: string): Promise
 
   const token = await getSpotifyToken(env);
   if (token && resource?.type === "track") {
-    const response = await fetch(`https://api.spotify.com/v1/tracks/${resource.id}`, {
-      headers: { authorization: `Bearer ${token}` }
+    const response = await safeFetchResponse(`https://api.spotify.com/v1/tracks/${resource.id}`, {
+      maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["api.spotify.com"],
+      init: { headers: { authorization: `Bearer ${token}` } }
     });
     if (response.ok) {
       const data = spotifyTrackSchema.parse(await response.json());
@@ -151,8 +153,9 @@ export async function importSpotify(env: RuntimeEnv, sourceUrl: string): Promise
     }
   }
   if (token && resource?.type === "album") {
-    const response = await fetch(`https://api.spotify.com/v1/albums/${resource.id}`, {
-      headers: { authorization: `Bearer ${token}` }
+    const response = await safeFetchResponse(`https://api.spotify.com/v1/albums/${resource.id}`, {
+      maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["api.spotify.com"],
+      init: { headers: { authorization: `Bearer ${token}` } }
     });
     if (response.ok) {
       const data = spotifyAlbumSchema.parse(await response.json());
@@ -171,7 +174,9 @@ export async function importSpotify(env: RuntimeEnv, sourceUrl: string): Promise
   }
 
   if (resource) {
-    const embedResponse = await fetch(`https://open.spotify.com/embed/${resource.type}/${resource.id}`);
+    const embedResponse = await safeFetchResponse(`https://open.spotify.com/embed/${resource.type}/${resource.id}`, {
+      maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["open.spotify.com"]
+    });
     if (embedResponse.ok) {
       const embed = parseSpotifyEmbedHtml(await embedResponse.text());
       imported = {
@@ -187,7 +192,9 @@ export async function importSpotify(env: RuntimeEnv, sourceUrl: string): Promise
     }
 
     if (!imported.title || !imported.artworkUrl) {
-      const oembedResponse = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(sourceUrl)}`);
+      const oembedResponse = await safeFetchResponse(`https://open.spotify.com/oembed?url=${encodeURIComponent(sourceUrl)}`, {
+        maxBytes: 2_000_000, timeoutMs: 8_000, allowedHosts: ["open.spotify.com"]
+      });
       if (oembedResponse.ok) {
         const oembed = spotifyOembedSchema.parse(await oembedResponse.json());
         imported = {
@@ -207,13 +214,18 @@ async function getSpotifyToken(env: RuntimeEnv): Promise<string | null> {
   const clientSecret = env.SPOTIFY_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
 
-  const response = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-      "content-type": "application/x-www-form-urlencoded"
-    },
-    body: "grant_type=client_credentials"
+  const response = await safeFetchResponse("https://accounts.spotify.com/api/token", {
+    maxBytes: 2_000_000,
+    timeoutMs: 8_000,
+    allowedHosts: ["accounts.spotify.com"],
+    init: {
+      method: "POST",
+      headers: {
+        authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      body: "grant_type=client_credentials"
+    }
   });
   if (!response.ok) return null;
   const data = spotifyTokenSchema.parse(await response.json());

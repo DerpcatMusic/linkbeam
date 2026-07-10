@@ -1,5 +1,6 @@
 import type { RuntimeEnv } from "@lib/runtime";
 import type { ImportedTrack, Track } from "@lib/types";
+import { safeFetchStream } from "@lib/safe-fetch";
 
 export function artworkPublicPath(track: Track): string {
   if (track.artwork_object_key) return `/artwork/${encodeURIComponent(track.id)}`;
@@ -13,7 +14,11 @@ export function canCacheArtwork(imported: ImportedTrack): boolean {
 
 export async function cacheArtwork(env: RuntimeEnv, imported: ImportedTrack, track: Track): Promise<string | null> {
   if (!canCacheArtwork(imported) || !imported.artworkUrl) return null;
-  const response = await fetch(imported.artworkUrl);
+  const response = await safeFetchStream(imported.artworkUrl, {
+    maxBytes: 10_000_000,
+    timeoutMs: 12_000,
+    accept: /^image\//i
+  });
   if (!response.ok) return null;
   const contentType = response.headers.get("content-type") || "image/jpeg";
   if (!contentType.startsWith("image/")) return null;

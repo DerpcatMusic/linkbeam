@@ -57,10 +57,10 @@ describe("mergeImported", () => {
 
 describe("backfillDestinations", () => {
   it("upgrades a YouTube search fallback to a direct watch link", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => youtubeSearch
-    });
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify(youtubeSearch), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    }));
     vi.stubGlobal("fetch", fetchMock);
 
     const filled = await backfillDestinations({
@@ -79,7 +79,7 @@ describe("backfillDestinations", () => {
   });
 
   it("falls back to a search URL when YouTube lookup fails", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
 
     const filled = await backfillDestinations({
       provider: "odesli",

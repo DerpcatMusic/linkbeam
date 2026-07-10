@@ -43,7 +43,9 @@ describe("spotify embed parsing", () => {
 
     const imported = await importSpotify({} as RuntimeEnv, "https://open.spotify.com/album/4Beujzrm3xS4erq9gTBCLe?si=abc");
 
-    expect(fetchMock).toHaveBeenCalledWith("https://open.spotify.com/embed/album/4Beujzrm3xS4erq9gTBCLe");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("https://open.spotify.com/embed/album/4Beujzrm3xS4erq9gTBCLe");
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ redirect: "manual" }));
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     expect(imported.title).toBe("Forever");
     expect(imported.artistNames).toEqual(["Elin", "Derpcat"]);
     expect(imported.artworkUrl).toContain("ab67616d0000b27394fc33d4340f4eaec8183bd9");

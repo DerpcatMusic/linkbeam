@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ImportedTrack, Platform } from "@lib/types";
+import { safeFetchResponse } from "@lib/safe-fetch";
 
 const odesliEntitySchema = z.object({
   id: z.string(),
@@ -82,9 +83,14 @@ export function parseOdesliResponse(data: unknown, sourceUrl: string): ImportedT
 }
 
 export async function importOdesli(sourceUrl: string): Promise<ImportedTrack> {
-  const response = await fetch(
+  const response = await safeFetchResponse(
     `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(sourceUrl)}`,
-    { headers: { "User-Agent": "Beamlink/1.0 (+https://github.com/DerpcatMusic/beamlink)", Accept: "application/json" } }
+    {
+      maxBytes: 2_000_000,
+      timeoutMs: 8_000,
+      allowedHosts: ["api.song.link"],
+      init: { headers: { "User-Agent": "Beamlink/1.0 (+https://github.com/DerpcatMusic/beamlink)", Accept: "application/json" } }
+    }
   );
   if (!response.ok) throw new Error(`Odesli lookup failed (${response.status}).`);
   return parseOdesliResponse(await response.json(), sourceUrl);
