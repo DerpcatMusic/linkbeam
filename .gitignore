@@ -8,3 +8,4 @@ dist/
 .impeccable/
 .preview-screenshots/
 test-results/
+.worktrees/
