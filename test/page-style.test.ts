@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   asciiPatternDataUri,
+  compactAsciiPatternDataUri,
+  STYLE_CARD_PREVIEW_PALETTE,
   backgroundClasses,
   buttonClasses,
   normalizeButtonStyle,
@@ -59,6 +61,9 @@ describe("platform helpers", () => {
 });
 
 describe("asciiPatternDataUri", () => {
+  it("keeps the encoded fallback below 4 KB", () => {
+    expect(compactAsciiPatternDataUri(STYLE_CARD_PREVIEW_PALETTE, 0.7).length).toBeLessThan(4_000);
+  });
   it("returns an encoded SVG data URI", () => {
     const uri = asciiPatternDataUri({
       "--page-tint": "rgb(78 30 79)",
@@ -71,7 +76,7 @@ describe("asciiPatternDataUri", () => {
     expect(decoded).toContain("font-weight=\"700\"");
   });
 
-  it("honors density for tile dimensions", () => {
+  it("keeps density out of the server-rendered fallback", () => {
     const coarse = asciiPatternDataUri({
       "--page-tint": "rgb(78 30 79)",
       "--primary": "rgb(255 255 255)",
@@ -82,7 +87,7 @@ describe("asciiPatternDataUri", () => {
       "--primary": "rgb(255 255 255)",
       "--muted": "rgb(200 180 200)"
     }, "md");
-    expect(decodeURIComponent(coarse)).toContain('width="432"');
-    expect(decodeURIComponent(balanced)).toContain('width="648"');
+    expect(coarse).toBe(balanced);
+    expect(decodeURIComponent(coarse)).toContain('width="52"');
   });
 });

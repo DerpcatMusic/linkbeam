@@ -1,4 +1,3 @@
-import { asciiGridToSvgDataUri, proceduralAsciiGrid } from "@lib/ascii-mosaic";
 import type { AsciiDensity } from "@lib/page-style-options";
 import type { Platform } from "@lib/types";
 import { platformBrandColors } from "@lib/platform-brand";
@@ -105,15 +104,28 @@ export const STYLE_CARD_PREVIEW_PALETTE: TrackPaletteVars = {
   "--muted": "oklch(0.62 0.05 285)"
 };
 
-/** SVG tile for ASCII backgrounds — artwork-shaped procedural mosaic until canvas hydrates. */
+function escapeSvgAttribute(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/** Compact deterministic tile used until the artwork-aware canvas enhancement starts. */
+export function compactAsciiPatternDataUri(vars: TrackPaletteVars, contrast = 0.7): string {
+  const glyphs = ["@", "#", "+", ":", ".", "*", "=", "%"];
+  const text = glyphs.map((glyph, index) => `<text x="${5 + (index % 4) * 12}" y="${12 + Math.floor(index / 4) * 14}">${glyph}</text>`).join("");
+  const primary = escapeSvgAttribute(vars["--primary"] ?? "#fff");
+  const muted = escapeSvgAttribute(vars["--muted"] ?? primary);
+  const opacity = Math.max(0.2, Math.min(1, contrast)).toFixed(2);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="32"><g font-family="ui-monospace,monospace" font-size="11" font-weight="700" opacity="${opacity}"><g fill="${primary}">${text}</g><path stroke="${muted}" stroke-opacity=".28" d="M0 31.5h52"/></g></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+/** Backwards-compatible call shape; density remains a canvas-only enhancement. */
 export function asciiPatternDataUri(
   vars: TrackPaletteVars,
-  density: AsciiDensity = "md",
+  _density: AsciiDensity = "md",
   contrast = 0.7
 ): string {
-  // Keep SSR/fallback tiles modest; live canvas can render finer density.
-  const fallbackDensity: AsciiDensity = density === "lg" ? "md" : density;
-  return asciiGridToSvgDataUri(proceduralAsciiGrid(fallbackDensity, vars, contrast), vars);
+  return compactAsciiPatternDataUri(vars, contrast);
 }
 
 function parseHexColor(hex: string): { red: number; green: number; blue: number } | null {
@@ -133,4 +145,3 @@ function relativeLuminance(color: { red: number; green: number; blue: number }):
   });
   return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
 }
-

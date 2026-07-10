@@ -36,6 +36,26 @@ for route in / /admin/onboarding /admin/links/new; do
 done
 
 curl --fail --silent --show-error "${BASE_URL}/" | rg --quiet '<html|<!doctype html'
+
+assert_max_bytes() {
+  local label="$1"
+  local maximum="$2"
+  shift 2
+  local response_file
+  response_file="$(mktemp -t linkbeam-payload.XXXXXX.html)"
+  curl --fail --silent --show-error "$@" --output "${response_file}"
+  local actual
+  actual="$(wc -c < "${response_file}")"
+  rm -f "${response_file}"
+  if (( actual > maximum )); then
+    echo "${label} payload is ${actual} bytes; budget is ${maximum}" >&2
+    exit 1
+  fi
+}
+
+assert_max_bytes "fan page" 30000 "${BASE_URL}/demon-cake"
+assert_max_bytes "new-link editor" 100000 "${BASE_URL}/admin/links/new"
+assert_max_bytes "ASCII preview" 40000 -X POST -H 'content-type: application/json' --data '{"title":"Payload check","artistName":"Linkbeam","pageBackgroundStyle":"ascii","destinations":{"spotify":"https://open.spotify.com/track/1"}}' "${BASE_URL}/admin/preview"
 rg --quiet 'queue|scheduled' dist/server/entry.mjs dist/server/chunks 2>/dev/null
 
 echo "Built Worker smoke test passed at ${BASE_URL}"
