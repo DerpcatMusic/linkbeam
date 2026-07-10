@@ -57,7 +57,8 @@ export const linkBodySchema = z.object({
 
 export const subscribeBodySchema = z.object({
   linkId: z.string().min(1),
-  email: z.email()
+  email: z.email(),
+  website: z.string().optional()
 });
 
 export const settingsBodySchema = z.object({

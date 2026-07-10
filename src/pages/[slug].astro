@@ -298,10 +298,11 @@ const fanDestinations = destinationRows.map((row) => ({
         event.preventDefault();
         if (status) status.textContent = "Saving…";
         const email = document.querySelector("#email")?.value?.trim() ?? "";
+        const website = document.querySelector("#website")?.value ?? "";
         const response = await fetch("/api/subscribe", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ linkId, email })
+          body: JSON.stringify({ linkId, email, website })
         });
         const data = await response.json().catch(() => ({}));
         if (response.ok && data.created && data.eventId && typeof window.fbq === "function") {

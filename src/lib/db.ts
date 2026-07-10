@@ -371,6 +371,13 @@ export async function listSubscribers(env: RuntimeEnv, linkId: string): Promise<
   return result.results ?? [];
 }
 
+export async function deleteSubscriber(env: RuntimeEnv, linkId: string, subscriberId: string): Promise<boolean> {
+  const result = await env.DB.prepare("DELETE FROM subscribers WHERE id = ? AND link_id = ?")
+    .bind(subscriberId, linkId)
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
+
 export async function purgeLinkCache(env: RuntimeEnv, slug: string): Promise<void> {
   await env.LINK_CACHE.delete(cacheKey(slug));
 }

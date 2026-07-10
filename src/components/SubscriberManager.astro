@@ -1,0 +1,68 @@
+---
+import Button from "@components/Button.astro";
+
+interface SubscriberRow {
+  id: string;
+  email: string;
+  consented_at: string;
+}
+
+interface Props {
+  linkId: string;
+  subscribers: SubscriberRow[];
+}
+
+const { linkId, subscribers } = Astro.props;
+---
+
+<section class="admin-panel subscriber-manager" aria-labelledby="subscriberTitle">
+  <div class="panel-head">
+    <div>
+      <h2 id="subscriberTitle">Email signups</h2>
+      <p class="muted">{subscribers.length} collected with consent timestamp.</p>
+    </div>
+    <Button variant="secondary" size="sm" href={`/api/admin/links/${linkId}/subscribers`}>Export email signups</Button>
+  </div>
+  {subscribers.length === 0 ? (
+    <p class="muted">No email signups yet.</p>
+  ) : (
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Email</th><th>Consented</th><th aria-label="Actions"></th></tr></thead>
+        <tbody>
+          {subscribers.map((subscriber) => (
+            <tr data-subscriber-row={subscriber.id}>
+              <td data-sensitive>{subscriber.email}</td>
+              <td>{subscriber.consented_at.slice(0, 19)}</td>
+              <td><button class="button ghost sm" type="button" data-delete-subscriber={subscriber.id} data-email={subscriber.email}>Delete</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+  <p class="muted" data-subscriber-status aria-live="polite"></p>
+</section>
+
+<script is:inline define:vars={{ linkId }}>
+  const subscriberStatus = document.querySelector("[data-subscriber-status]");
+  for (const button of document.querySelectorAll("[data-delete-subscriber]")) {
+    button.addEventListener("click", async () => {
+      const subscriberId = button.dataset.deleteSubscriber;
+      if (!subscriberId || !confirm(`Delete ${button.dataset.email || "this email signup"}?`)) return;
+      const response = await fetch(`/api/admin/links/${linkId}/subscribers/${subscriberId}`, { method: "DELETE" });
+      if (response.ok) {
+        button.closest("[data-subscriber-row]")?.remove();
+        if (subscriberStatus) subscriberStatus.textContent = "Email signup deleted.";
+      } else if (subscriberStatus) {
+        subscriberStatus.textContent = "Could not delete email signup.";
+      }
+    });
+  }
+</script>
+
+<style>
+  .subscriber-manager { gap: 0.75rem; }
+  .subscriber-manager h2, .subscriber-manager p { margin: 0; }
+  .subscriber-manager td:last-child, .subscriber-manager th:last-child { text-align: right; }
+</style>

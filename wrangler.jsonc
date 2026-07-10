@@ -59,6 +59,7 @@
     // Relative optimization value per streaming conversion (enables value-based
     // bidding + value-weighted lookalikes). Not literal revenue — tune freely.
     "META_CONVERSION_VALUE": "1",
-    "META_CURRENCY": "USD"
+    "META_CURRENCY": "USD",
+    "SUBSCRIBER_RETENTION_DAYS": "365"
   }
 }

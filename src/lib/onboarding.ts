@@ -83,7 +83,8 @@ export function wranglerSecretCommands(): string {
     "wrangler secret put CF_ACCESS_TEAM_DOMAIN",
     "wrangler secret put CF_ACCESS_AUD",
     "wrangler secret put ADMIN_PASSWORD_HASH",
-    "wrangler secret put ADMIN_SESSION_SECRET"
+    "wrangler secret put ADMIN_SESSION_SECRET",
+    "wrangler secret put RATE_LIMIT_SECRET"
   ].join("\n");
 }
 

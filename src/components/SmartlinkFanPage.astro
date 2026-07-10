@@ -173,6 +173,7 @@ const asciiEnhance = pageBackgroundStyle === "ascii";
   {isPresave && interactive && (
     <form class="subscribe" id="subscribeForm">
       <label for="email">Email for release day reminder</label>
+      <label class="honeypot" aria-hidden="true">Website <input id="website" name="website" tabindex="-1" autocomplete="off" /></label>
       <div class="subscribe-row">
         <input
           id="email"
@@ -186,6 +187,7 @@ const asciiEnhance = pageBackgroundStyle === "ascii";
         <button class="button subscribe-submit" type="submit">Notify me</button>
       </div>
       <p class="subscribe-status muted" id="subscribeStatus" role="status" aria-live="polite"></p>
+      <p class="subscribe-disclosure muted">Your email is shared with this link's owner for release updates.</p>
     </form>
   )}
 
@@ -374,6 +376,7 @@ const asciiEnhance = pageBackgroundStyle === "ascii";
 )}
 
 <style>
+  .honeypot { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .draft-ribbon {
     position: fixed;
     top: 0.75rem;

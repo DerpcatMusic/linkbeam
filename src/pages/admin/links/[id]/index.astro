@@ -11,8 +11,9 @@ import CollapsibleSection from "@components/CollapsibleSection.astro";
 import Icon from "@components/Icon.astro";
 import PlatformIcon from "@components/PlatformIcon.astro";
 import SettingsModal from "@components/SettingsModal.astro";
+import SubscriberManager from "@components/SubscriberManager.astro";
 import ScreenshotSafeToggle from "@components/ScreenshotSafeToggle.astro";
-import { getLinkById } from "@lib/db";
+import { getLinkById, listSubscribers } from "@lib/db";
 import { getRuntimeEnv, requireAdmin, publicBaseUrl } from "@lib/runtime";
 import { effectiveLinkMode, daysUntilRelease } from "@lib/effective-mode";
 import {
@@ -61,6 +62,7 @@ if (blocked) return blocked;
 
 const link = await getLinkById(env, Astro.params.id ?? "");
 if (!link) return Astro.redirect("/admin", 302);
+const subscribers = await listSubscribers(env, link.id);
 
 const baseUrl = publicBaseUrl(env, Astro.request).replace(/\/$/, "");
 const publicUrl = `${baseUrl}/${link.slug}`;
@@ -544,6 +546,8 @@ function emqLabel(score: number | undefined): string {
         <p class="muted empty-line">No CAPI log rows for this link in {rangeLabel.toLowerCase()}. Traffic may be pre-deploy or bots were filtered.</p>
       ) : null}
     </CollapsibleSection>
+
+    <SubscriberManager linkId={link.id} subscribers={subscribers} />
 
     <section class="section footer-actions">
       <div class="admin-toolbar">

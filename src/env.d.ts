@@ -21,6 +21,8 @@ type Env = {
   CF_ACCESS_AUD?: string;
   ADMIN_PASSWORD_HASH?: string;
   ADMIN_SESSION_SECRET?: string;
+  RATE_LIMIT_SECRET?: string;
+  SUBSCRIBER_RETENTION_DAYS?: string;
   SPOTIFY_CLIENT_ID?: string;
   SPOTIFY_CLIENT_SECRET?: string;
 };

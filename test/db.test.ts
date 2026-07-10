@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLink, deleteLink, purgeTrackLinkCaches } from "../src/lib/db";
+import { createLink, deleteLink, deleteSubscriber, purgeTrackLinkCaches } from "../src/lib/db";
 import type { RuntimeEnv } from "../src/lib/runtime";
 
 type Call = { sql: string; bindings: unknown[] };
@@ -192,5 +192,14 @@ describe("purgeTrackLinkCaches", () => {
     await purgeTrackLinkCaches(env, "trk_existing");
 
     expect(deletedCacheKeys).toEqual(["link:release-one", "link:release-two"]);
+  });
+});
+
+describe("deleteSubscriber", () => {
+  it("scopes deletion to both link and subscriber ids", async () => {
+    const { env, calls } = makeEnv();
+    await deleteSubscriber(env, "lnk_created", "sub_1");
+    const call = calls.find((item) => item.sql.includes("DELETE FROM subscribers WHERE id"));
+    expect(call?.bindings).toEqual(["sub_1", "lnk_created"]);
   });
 });

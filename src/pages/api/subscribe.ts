@@ -6,11 +6,16 @@ import { isBot } from "@lib/bots";
 import { createEventId, queueMetaEvent, resolveTrackingCookies } from "@lib/tracking";
 import { recordMetricEvent } from "@lib/metrics";
 import { subscribeBodySchema } from "@lib/validation";
+import { consumeSubscribeLimit } from "@lib/subscriber-privacy";
 
 export const POST: APIRoute = async (context) => {
   try {
     const env = getRuntimeEnv(context);
     const body = subscribeBodySchema.parse(await readJson<unknown>(context.request));
+    if (body.website || isBot(context.request)) return json({ ok: true, created: false });
+    if (!await consumeSubscribeLimit(env, context.request, body.linkId)) {
+      return json({ ok: false, error: "Too many signup attempts. Try again later." }, { status: 429 });
+    }
 
     const row = await env.DB.prepare("SELECT slug FROM links WHERE id = ? AND status = 'published'")
       .bind(body.linkId)
@@ -22,7 +27,7 @@ export const POST: APIRoute = async (context) => {
 
     const result = await subscribeEmail(env, body.linkId, body.email);
     let eventId: string | undefined;
-    if (result.created && !isBot(context.request)) {
+    if (result.created) {
       eventId = createEventId("subscribe", link);
       const trackingCookies = resolveTrackingCookies(context.request);
       defer(context, queueMetaEvent(env, context.request, link, {
