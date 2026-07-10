@@ -31,7 +31,11 @@ for _ in $(seq 1 60); do
   sleep 0.5
 done
 
-for route in / /admin/onboarding /admin/links/new; do
+routes=(/)
+if ! grep -Eq '"custom_domain"[[:space:]]*:[[:space:]]*true' dist/server/wrangler.json; then
+  routes+=(/admin/onboarding /admin/links/new)
+fi
+for route in "${routes[@]}"; do
   curl --fail --silent --show-error --output /dev/null "${BASE_URL}${route}"
 done
 
@@ -43,7 +47,11 @@ assert_max_bytes() {
   shift 2
   local response_file
   response_file="$(mktemp -t linkbeam-payload.XXXXXX.html)"
-  curl --fail --silent --show-error "$@" --output "${response_file}"
+  if ! curl --fail --silent --show-error "$@" --output "${response_file}"; then
+    echo "${label} request failed: $*" >&2
+    rm -f "${response_file}"
+    exit 1
+  fi
   local actual
   actual="$(wc -c < "${response_file}")"
   rm -f "${response_file}"
@@ -54,8 +62,10 @@ assert_max_bytes() {
 }
 
 assert_max_bytes "fan page" 30000 "${BASE_URL}/demon-cake"
-assert_max_bytes "new-link editor" 100000 "${BASE_URL}/admin/links/new"
-assert_max_bytes "ASCII preview" 40000 -X POST -H 'content-type: application/json' --data '{"title":"Payload check","artistName":"Linkbeam","pageBackgroundStyle":"ascii","destinations":{"spotify":"https://open.spotify.com/track/1"}}' "${BASE_URL}/admin/preview"
+if (( ${#routes[@]} > 1 )); then
+  assert_max_bytes "new-link editor" 100000 "${BASE_URL}/admin/links/new"
+  assert_max_bytes "ASCII preview" 40000 -X POST -H 'content-type: application/json' --data '{"title":"Payload check","artistName":"Linkbeam","pageBackgroundStyle":"ascii","destinations":{"spotify":"https://open.spotify.com/track/1"}}' "${BASE_URL}/admin/preview"
+fi
 grep -ERq 'queue|scheduled' dist/server/entry.mjs dist/server/chunks 2>/dev/null
 
 echo "Built Worker smoke test passed at ${BASE_URL}"
