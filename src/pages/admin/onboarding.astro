@@ -79,6 +79,10 @@ const secretChecks = [
   {
     ...checkLabel(status.secrets.spotifyClientSecret, "SPOTIFY_CLIENT_SECRET"),
     hint: "Optional. Pairs with client ID; without both, import uses oEmbed only."
+  },
+  {
+    ...checkLabel(status.secrets.rateLimitSecret, "RATE_LIMIT_SECRET"),
+    hint: "Required for privacy-safe email-signup rate limiting."
   }
 ];
 

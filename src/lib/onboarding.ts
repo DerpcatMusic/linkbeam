@@ -35,6 +35,7 @@ export interface OnboardingSecrets {
   metaAccessToken: boolean;
   spotifyClientId: boolean;
   spotifyClientSecret: boolean;
+  rateLimitSecret: boolean;
 }
 
 export interface OnboardingAuth {
@@ -237,7 +238,8 @@ export async function getOnboardingStatus(
     metaPixelId: Boolean(metaPixelId?.trim() || env.META_PIXEL_ID?.trim()),
     metaAccessToken: Boolean(metaAccessToken?.trim() || env.META_ACCESS_TOKEN?.trim()),
     spotifyClientId: Boolean(env.SPOTIFY_CLIENT_ID?.trim()),
-    spotifyClientSecret: Boolean(env.SPOTIFY_CLIENT_SECRET?.trim())
+    spotifyClientSecret: Boolean(env.SPOTIFY_CLIENT_SECRET?.trim()),
+    rateLimitSecret: Boolean(env.RATE_LIMIT_SECRET?.trim())
   };
 
   const auth: OnboardingAuth = {

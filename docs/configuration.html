@@ -125,6 +125,11 @@
                 <td><code>""</code></td>
                 <td>Optional Test Events code from Meta Events Manager</td>
               </tr>
+              <tr>
+                <td><code>SUBSCRIBER_RETENTION_DAYS</code></td>
+                <td><code>365</code></td>
+                <td>Scheduled retention window for consented email signups (1–3650 days)</td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -165,6 +170,11 @@
                 <td><code>ADMIN_PASSWORD_HASH</code> / <code>ADMIN_SESSION_SECRET</code></td>
                 <td>Optional</td>
                 <td>Password gate for <code>/admin</code> when Access is not used. Generate the PBKDF2 record with <code>bun run auth:hash</code>.</td>
+              </tr>
+              <tr>
+                <td><code>RATE_LIMIT_SECRET</code></td>
+                <td>Required for email signups</td>
+                <td>HMAC key for privacy-safe per-client signup limits. Generate a random 32-byte value and store it only as a Worker secret.</td>
               </tr>
             </tbody>
           </table>

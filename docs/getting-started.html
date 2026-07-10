@@ -79,13 +79,14 @@ wrangler queues create linkbeam-conversions-dlq</code></pre>
 bun run db:migrate         # remote D1 for production</code></pre>
         </div>
 
-        <h2>4. Optional secrets</h2>
-        <p>Meta and Spotify credentials unlock full tracking and import. Without Spotify, import falls back to oEmbed (title/artwork only, no ISRC).</p>
+        <h2>4. Configure secrets</h2>
+        <p><code>RATE_LIMIT_SECRET</code> is required for privacy-safe email-signup limits. Meta and Spotify credentials unlock full tracking and import.</p>
         <div class="terminal">
           <pre><code>wrangler secret put META_PIXEL_ID
 wrangler secret put META_ACCESS_TOKEN
 wrangler secret put SPOTIFY_CLIENT_ID
-wrangler secret put SPOTIFY_CLIENT_SECRET</code></pre>
+wrangler secret put SPOTIFY_CLIENT_SECRET
+wrangler secret put RATE_LIMIT_SECRET</code></pre>
         </div>
 
         <h2>5. Run locally</h2>

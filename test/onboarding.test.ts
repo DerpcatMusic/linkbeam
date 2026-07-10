@@ -19,7 +19,8 @@ function baseStatus(overrides: Partial<OnboardingStatus> = {}): OnboardingStatus
       metaPixelId: true,
       metaAccessToken: true,
       spotifyClientId: false,
-      spotifyClientSecret: false
+      spotifyClientSecret: false,
+      rateLimitSecret: false
     },
     auth: { cloudflareAccess: true, passwordAuth: false, configured: true },
     databaseMigrated: true,
