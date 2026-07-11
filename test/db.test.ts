@@ -114,13 +114,14 @@ describe("createLink", () => {
       "web",
       null,
       "Stream_Click_Paid",
+      null,
       "blur",
       "monochrome",
       expect.stringContaining('"aurora"')
     ]);
   });
 
-  it("persists Spotify behavior and paid event overrides when creating a link", async () => {
+  it("persists Spotify behavior and a learning event when creating a link", async () => {
     const { env, calls } = makeEnv();
 
     const input = {
@@ -131,16 +132,17 @@ describe("createLink", () => {
       destinations: { spotify: "https://open.spotify.com/track/123" },
       spotifyOpenBehavior: "app_first",
       spotifyContextUrl: "spotify:playlist:abc123456789",
-      paidClickEventName: "Stream_Click_Paid_Meta"
+      learningClickEventName: "Stream_Click"
     } as Parameters<typeof createLink>[1];
 
     await createLink(env, input);
 
     const insert = calls.find((call) => call.sql.includes("INSERT INTO links"));
-    expect(insert?.bindings.slice(-6)).toEqual([
+    expect(insert?.bindings.slice(-7)).toEqual([
       "app_first",
       "spotify:playlist:abc123456789",
-      "Stream_Click_Paid_Meta",
+      "Stream_Click_Paid",
+      "Stream_Click",
       "blur",
       "monochrome",
       expect.stringContaining('"ascii"')

@@ -19,6 +19,18 @@ export function resolvePaidClickEventName(link: SmartLink): string {
   return link.paid_click_event_name || "Stream_Click_Paid";
 }
 
+export function resolveLearningClickEventName(link: SmartLink): string | null {
+  const eventName = link.learning_click_event_name;
+  return eventName && eventName !== resolveClickEventName(link) ? eventName : null;
+}
+
+export function resolveOutboundMetaEvents(link: SmartLink, primaryEventId: string): Array<{ eventName: string; eventId: string }> {
+  const events = [{ eventName: resolveClickEventName(link), eventId: primaryEventId }];
+  const learningEventName = resolveLearningClickEventName(link);
+  if (learningEventName) events.push({ eventName: learningEventName, eventId: `${primaryEventId}_stream` });
+  return events;
+}
+
 export function preReleaseDestinationLabel(platformLabel: string, mode: LinkMode): string {
   return mode === "presave" ? `Open on ${platformLabel}` : platformLabel;
 }

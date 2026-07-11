@@ -3,8 +3,8 @@ import { getPublishedLink, incrementDailyMetric } from "@lib/db";
 import { notFound } from "@lib/http";
 import { defer, getRuntimeEnv } from "@lib/runtime";
 import { isBot } from "@lib/bots";
-import { resolveClickEventName, resolvePaidClickEventName } from "@lib/effective-mode";
-import { createEventId, eventIdFromRequest, formatTrackingCookieHeaders, getMetaCookiesToSet, hasPaidAttribution, paidEventId, queueMetaEvent, resolveTrackingCookies } from "@lib/tracking";
+import { resolveOutboundMetaEvents } from "@lib/effective-mode";
+import { createEventId, eventIdFromRequest, formatTrackingCookieHeaders, getMetaCookiesToSet, queueMetaEvent, resolveTrackingCookies } from "@lib/tracking";
 import { recordMetricEvent } from "@lib/metrics";
 import { spotifyDestinationUrl } from "@lib/spotify-links";
 
@@ -24,10 +24,14 @@ export const handleOutbound: APIRoute = async (context) => {
     const trackingCookies = resolveTrackingCookies(context.request, cookiesToSet);
     const isPresave = link.mode === "presave";
     const eventId = eventIdFromRequest(context.request, createEventId(isPresave ? "presave" : "click", link, platform));
-    const attribution = trackingCookies.attribution;
-    defer(context, queueMetaEvent(env, context.request, link, { kind: isPresave ? "presave" : "click", eventName: resolveClickEventName(link), eventId, platform, cookies: trackingCookies }));
-    if (!isPresave && hasPaidAttribution(attribution)) {
-      defer(context, queueMetaEvent(env, context.request, link, { kind: "click", eventName: resolvePaidClickEventName(link), eventId: paidEventId(eventId), platform, cookies: trackingCookies }));
+    for (const metaEvent of resolveOutboundMetaEvents(link, eventId)) {
+      defer(context, queueMetaEvent(env, context.request, link, {
+        kind: isPresave ? "presave" : "click",
+        eventName: metaEvent.eventName,
+        eventId: metaEvent.eventId,
+        platform,
+        cookies: trackingCookies
+      }));
     }
     defer(context, incrementDailyMetric(env, link.id, isPresave ? "presaves" : "clicks", platform));
     defer(context, recordMetricEvent(env, { linkId: link.id, kind: isPresave ? "presave" : "click", platform, request: context.request, cookies: trackingCookies }));

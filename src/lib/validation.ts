@@ -43,9 +43,9 @@ export const linkBodySchema = z.object({
   trackId: z.string().min(1),
   mode: z.enum(["presave", "live"]),
   destinations: destinationsSchema,
-  viewEventName: z.string().min(1).optional(),
-  clickEventName: z.string().min(1).nullable().optional(),
-  paidClickEventName: z.string().min(1).optional(),
+  viewEventName: z.enum(["PageView", "ViewContent"]).optional(),
+  clickEventName: z.enum(["ViewContent", "Lead", "Stream_Click"]).nullable().optional(),
+  learningClickEventName: z.enum(["ViewContent", "Lead", "Stream_Click"]).nullable().optional(),
   spotifyOpenBehavior: z.enum(["web", "playlist_context", "app_first"]).optional(),
   spotifyContextUrl: z.url().or(z.literal("")).nullable().optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
@@ -53,6 +53,9 @@ export const linkBodySchema = z.object({
   pageBackgroundStyle: z.enum(PAGE_BACKGROUND_STYLES).optional(),
   buttonStyle: z.enum(BUTTON_STYLES).optional(),
   pageStyleOptions: z.record(z.string(), z.unknown()).optional()
+}).refine((data) => !data.learningClickEventName || data.learningClickEventName !== data.clickEventName, {
+  message: "Learning event must differ from the primary click event.",
+  path: ["learningClickEventName"]
 });
 
 export const subscribeBodySchema = z.object({

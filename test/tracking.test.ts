@@ -22,7 +22,8 @@ import { isBot } from "../src/lib/bots";
 import {
   effectiveLinkMode,
   resolveViewEventName,
-  resolveClickEventName
+  resolveClickEventName,
+  resolveOutboundMetaEvents
 } from "../src/lib/effective-mode";
 import { buildCapiRetryQuery } from "../src/lib/capi-log";
 import { getMetaAccessToken, getMetaApiVersion, getMetaCurrency, metaEventsManagerUrl } from "../src/lib/settings";
@@ -40,6 +41,7 @@ function baseLink(overrides: Partial<SmartLink> = {}): SmartLink {
     view_event_name: "ViewContent",
     click_event_name: null,
     paid_click_event_name: "Stream_Click_Paid",
+    learning_click_event_name: null,
     spotify_open_behavior: "web",
     spotify_context_url: null,
     page_background_style: "blur",
@@ -360,13 +362,29 @@ describe("client IP and geo for Meta CAPI", () => {
 });
 
 describe("Meta CAPI payload", () => {
-  it("enqueues Stream_Click events and writes edge analytics when a conversion queue is bound", async () => {
+  it("claims one Stream_Click ingress and enqueues it once", async () => {
     const sentMessages: any[] = [];
     const analyticsPoints: any[] = [];
+    const claims = new Set<string>();
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
     const env = {
+      DB: {
+        prepare: vi.fn((sql: string) => ({
+          bind: (claimKey: string) => ({
+            run: async () => {
+              if (sql.startsWith("DELETE")) {
+                claims.delete(claimKey);
+                return { meta: { changes: 1 } };
+              }
+              const inserted = !claims.has(claimKey);
+              claims.add(claimKey);
+              return { meta: { changes: inserted ? 1 : 0 } };
+            }
+          })
+        }))
+      },
       CONVERSION_EVENTS: {
         send: vi.fn(async (message: any) => {
           sentMessages.push(message);
@@ -421,6 +439,12 @@ describe("Meta CAPI payload", () => {
           landingPath: "/song"
         }
       }
+    });
+    await queueMetaEvent(env, request, baseLink({ track: { ...baseLink().track, isrc: "USRC17607839" } }), {
+      kind: "click",
+      eventName: "Stream_Click",
+      eventId: "evt_stream_1",
+      platform: "spotify"
     });
 
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -537,6 +561,34 @@ describe("Meta CAPI payload", () => {
 
     expect(fetchCalls[0].body.data[0].custom_data).toMatchObject({ value: 2.5, currency: "EUR" });
 
+    vi.unstubAllGlobals();
+  });
+
+  it("accepts only structurally confirmed Meta event counts", async () => {
+    const bodies = [
+      { events_received: 1, messages: [], fbtrace_id: "ok" },
+      { events_received: 0, messages: [{ message: "not accepted" }], fbtrace_id: "mismatch" },
+      { fbtrace_id: "missing" }
+    ];
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(bodies.shift()), { status: 200 })));
+    const env = {
+      META_ACCESS_TOKEN: "token",
+      META_PIXEL_ID: "123456",
+      DB: { prepare() { return { bind() { return this; }, async first() { return null; }, async run() { return { meta: { changes: 1 } }; } }; } }
+    } as any;
+    const event = {
+      eventName: "ViewContent", eventId: "evt_acceptance", eventTime: 1770000000,
+      actionSource: "website", eventSourceUrl: "https://links.test/out/song/spotify",
+      linkId: "lnk_1", slug: "song", trackTitle: "Song", artistName: "Artist"
+    } as const;
+
+    const accepted = await sendMetaBatch(env, [event], { skipRetryLog: true });
+    const mismatched = await sendMetaBatch(env, [event], { skipRetryLog: true });
+    const malformed = await sendMetaBatch(env, [event], { skipRetryLog: true });
+
+    expect(accepted).toMatchObject({ status: "sent", eventsReceived: 1, messages: [] });
+    expect(mismatched).toMatchObject({ status: "failed", eventsReceived: 0, messages: [{ message: "not accepted" }] });
+    expect(malformed).toMatchObject({ status: "failed", errorMessage: expect.stringContaining("events_received") });
     vi.unstubAllGlobals();
   });
 
@@ -890,6 +942,14 @@ describe("effective mode and event names", () => {
       track: { ...baseLink().track, release_at: past }
     }))).toBe("ViewContent");
     expect(resolveClickEventName(baseLink({ mode: "live" }))).toBe("ViewContent");
+  });
+
+  it("keeps ViewContent primary while collecting one distinct Stream_Click learning event", () => {
+    expect(resolveOutboundMetaEvents(baseLink({ learning_click_event_name: "Stream_Click" }), "click_evt_123"))
+      .toEqual([
+        { eventName: "ViewContent", eventId: "click_evt_123" },
+        { eventName: "Stream_Click", eventId: "click_evt_123_stream" }
+      ]);
   });
 
   it("fires PageView only on the landing pixel, with its own shared event id", () => {

@@ -15,6 +15,8 @@ export interface CapiLogRow {
   error_message: string | null;
   attempt: number;
   payload: string;
+  events_received?: number | null;
+  response_messages?: string | null;
   created_at: string;
 }
 
@@ -234,11 +236,11 @@ export function analyzeCapiMatchKeys(rows: CapiLogRow[]): CapiMatchKeyCoverage {
 export async function logCapiResult(
   env: RuntimeEnv,
   entry: CapiLogEntry,
-  result: { status: CapiLogStatus; httpStatus?: number; metaTraceId?: string; errorMessage?: string }
+  result: { status: CapiLogStatus; httpStatus?: number; metaTraceId?: string; eventsReceived?: number; messages?: unknown[]; errorMessage?: string }
 ): Promise<void> {
   await env.DB.prepare(
-    `INSERT INTO capi_log (id, event_id, link_id, kind, status, http_status, meta_trace_id, error_message, attempt, payload)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO capi_log (id, event_id, link_id, kind, status, http_status, meta_trace_id, error_message, attempt, payload, events_received, response_messages)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       newId("cap"),
@@ -250,7 +252,9 @@ export async function logCapiResult(
       result.metaTraceId ?? null,
       result.errorMessage ?? null,
       entry.attempt ?? 1,
-      JSON.stringify(entry.event)
+      JSON.stringify(entry.event),
+      result.eventsReceived ?? null,
+      result.messages ? JSON.stringify(result.messages) : null
     )
     .run();
 }

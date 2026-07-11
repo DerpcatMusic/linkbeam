@@ -26,6 +26,7 @@ type LinkRow = {
   view_event_name?: string;
   click_event_name?: string | null;
   paid_click_event_name?: string | null;
+  learning_click_event_name?: SmartLink["learning_click_event_name"];
   spotify_open_behavior?: string | null;
   spotify_context_url?: string | null;
   page_background_style?: string | null;
@@ -148,6 +149,7 @@ export async function createLink(env: RuntimeEnv, input: {
   spotifyOpenBehavior?: SmartLink["spotify_open_behavior"];
   spotifyContextUrl?: string | null;
   paidClickEventName?: string;
+  learningClickEventName?: SmartLink["learning_click_event_name"];
   pageBackgroundStyle?: SmartLink["page_background_style"];
   buttonStyle?: SmartLink["button_style"];
   pageStyleOptions?: PageStyleOptions | null;
@@ -162,10 +164,10 @@ export async function createLink(env: RuntimeEnv, input: {
   await env.DB.prepare(
     `INSERT INTO links (
        id, track_id, link_name, slug, mode, status, published_at,
-       spotify_open_behavior, spotify_context_url, paid_click_event_name,
+       spotify_open_behavior, spotify_context_url, paid_click_event_name, learning_click_event_name,
        page_background_style, button_style, page_style_options
      )
-     VALUES (?, ?, ?, ?, ?, ?, ${publishedAt}, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ${publishedAt}, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       id,
@@ -177,6 +179,7 @@ export async function createLink(env: RuntimeEnv, input: {
       input.spotifyOpenBehavior ?? "web",
       emptyToNull(input.spotifyContextUrl),
       input.paidClickEventName?.trim() || "Stream_Click_Paid",
+      input.learningClickEventName ?? null,
       input.pageBackgroundStyle ?? DEFAULT_PAGE_BACKGROUND_STYLE,
       input.buttonStyle ?? DEFAULT_BUTTON_STYLE,
       styleOptions
@@ -210,6 +213,7 @@ export async function updateLink(env: RuntimeEnv, id: string, input: {
   spotifyOpenBehavior?: SmartLink["spotify_open_behavior"];
   spotifyContextUrl?: string | null;
   paidClickEventName?: string;
+  learningClickEventName?: SmartLink["learning_click_event_name"];
   pageBackgroundStyle?: SmartLink["page_background_style"];
   buttonStyle?: SmartLink["button_style"];
   pageStyleOptions?: PageStyleOptions | null;
@@ -244,6 +248,10 @@ export async function updateLink(env: RuntimeEnv, id: string, input: {
   if (input.paidClickEventName !== undefined) {
     sets.push("paid_click_event_name = ?");
     bindings.push(input.paidClickEventName.trim() || "Stream_Click_Paid");
+  }
+  if (input.learningClickEventName !== undefined) {
+    sets.push("learning_click_event_name = ?");
+    bindings.push(input.learningClickEventName);
   }
   if (input.pageBackgroundStyle !== undefined) {
     sets.push("page_background_style = ?");
@@ -406,6 +414,7 @@ async function hydrateLink(env: RuntimeEnv, row: LinkRow): Promise<SmartLink | n
     view_event_name: row.view_event_name || "ViewContent",
     click_event_name: row.click_event_name ?? null,
     paid_click_event_name: row.paid_click_event_name || "Stream_Click_Paid",
+    learning_click_event_name: row.learning_click_event_name ?? null,
     spotify_open_behavior: defaultSpotifyOpenBehavior(row.spotify_open_behavior),
     spotify_context_url: row.spotify_context_url || null,
     page_background_style: normalizePageBackgroundStyle(row.page_background_style),

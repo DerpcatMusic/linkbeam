@@ -4,6 +4,8 @@ import type { PageStyleOptions } from "@lib/page-style-options";
 export type LinkMode = "presave" | "live";
 export type LinkStatus = "draft" | "published" | "archived";
 export type SpotifyOpenBehavior = "web" | "playlist_context" | "app_first";
+export type MetaPageEventName = "PageView" | "ViewContent";
+export type MetaClickEventName = "ViewContent" | "Lead" | "Stream_Click";
 
 export type { ButtonStyle, PageBackgroundStyle, PageStyleOptions };
 
@@ -69,6 +71,7 @@ export interface SmartLink {
   view_event_name: string;
   click_event_name: string | null;
   paid_click_event_name: string;
+  learning_click_event_name: MetaClickEventName | null;
   spotify_open_behavior: SpotifyOpenBehavior;
   spotify_context_url: string | null;
   page_background_style: PageBackgroundStyle;

@@ -44,6 +44,8 @@ export interface SendMetaBatchResult {
   status: "sent" | "failed";
   httpStatus?: number;
   metaTraceId?: string;
+  eventsReceived?: number;
+  messages?: unknown[];
   errorMessage?: string;
 }
 
@@ -401,20 +403,49 @@ export async function queueMetaEvent(env: RuntimeEnv, request: Request, link: Sm
     currency: conversionValue === undefined ? undefined : getMetaCurrency(env)
   };
 
+  if (!await claimMetaEvent(env, payload)) return;
+
   writeConversionAnalytics(env, request, payload, options.kind);
 
   const conversionQueue = (env as RuntimeEnv & { CONVERSION_EVENTS?: Queue<ConversionQueueMessage> }).CONVERSION_EVENTS;
   if (conversionQueue) {
-    await conversionQueue.send({
-      kind: options.kind,
-      event: payload,
-      queuedAt: Date.now(),
-      testEventCode: options.testEventCode
-    });
+    try {
+      await conversionQueue.send({
+        kind: options.kind,
+        event: payload,
+        queuedAt: Date.now(),
+        testEventCode: options.testEventCode
+      });
+    } catch (error) {
+      await releaseMetaEventClaim(env, payload);
+      throw error;
+    }
     return;
   }
 
   await sendMetaBatch(env, [payload], { kind: options.kind, testEventCode: options.testEventCode });
+}
+
+export async function claimMetaEvent(env: RuntimeEnv, event: Pick<QueuedMetaEvent, "eventName" | "eventId">): Promise<boolean> {
+  if (!env.DB) return true;
+  const claimKey = `${event.eventName}:${event.eventId}`;
+  const result = await env.DB.prepare("INSERT OR IGNORE INTO meta_event_claims (claim_key) VALUES (?)")
+    .bind(claimKey)
+    .run();
+  return (result.meta?.changes ?? 0) > 0;
+}
+
+async function releaseMetaEventClaim(env: RuntimeEnv, event: Pick<QueuedMetaEvent, "eventName" | "eventId">): Promise<void> {
+  if (!env.DB) return;
+  await env.DB.prepare("DELETE FROM meta_event_claims WHERE claim_key = ?")
+    .bind(`${event.eventName}:${event.eventId}`)
+    .run();
+}
+
+export async function deleteExpiredMetaEventClaims(env: RuntimeEnv): Promise<number> {
+  if (!env.DB) return 0;
+  const result = await env.DB.prepare("DELETE FROM meta_event_claims WHERE created_at < datetime('now', '-7 days')").run();
+  return result.meta?.changes ?? 0;
 }
 
 export async function processConversionQueueBatch(
@@ -596,9 +627,13 @@ export async function sendMetaBatch(
 
   const text = await response.text();
   let metaTraceId: string | undefined;
+  let eventsReceived: number | undefined;
+  let messages: unknown[] | undefined;
   try {
-    const parsed = JSON.parse(text) as { fbtrace_id?: string };
+    const parsed = JSON.parse(text) as { fbtrace_id?: string; events_received?: number; messages?: unknown[] };
     metaTraceId = parsed.fbtrace_id;
+    eventsReceived = parsed.events_received;
+    messages = parsed.messages;
   } catch {
     // ignore parse errors
   }
@@ -608,7 +643,24 @@ export async function sendMetaBatch(
       status: "failed",
       httpStatus: response.status,
       metaTraceId,
+      eventsReceived,
+      messages,
       errorMessage: `Meta CAPI failed: ${response.status} ${text}`
+    };
+    if (!options.skipRetryLog) {
+      await logCapiResult(env, { event: events[0], kind, attempt: options.attempt }, result);
+    }
+    return result;
+  }
+
+  if (eventsReceived !== events.length) {
+    const result: SendMetaBatchResult = {
+      status: "failed",
+      httpStatus: response.status,
+      metaTraceId,
+      eventsReceived,
+      messages,
+      errorMessage: `Meta CAPI acceptance mismatch: expected ${events.length} events_received, got ${eventsReceived ?? "missing"}`
     };
     if (!options.skipRetryLog) {
       await logCapiResult(env, { event: events[0], kind, attempt: options.attempt }, result);
@@ -619,7 +671,9 @@ export async function sendMetaBatch(
   const result: SendMetaBatchResult = {
     status: "sent",
     httpStatus: response.status,
-    metaTraceId
+    metaTraceId,
+    eventsReceived,
+    messages
   };
   if (!options.skipRetryLog) {
     await logCapiResult(env, { event: events[0], kind, attempt: options.attempt }, result);

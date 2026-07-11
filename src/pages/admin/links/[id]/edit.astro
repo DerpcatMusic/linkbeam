@@ -175,17 +175,29 @@ const identityBadges = [
       <section class="form-block">
         <div class="block-head">
           <h2 class="section-title">Tracking events</h2>
-          <p class="block-copy">Override the default Meta event names.</p>
+          <p class="block-copy">Keep ViewContent active while optionally collecting Stream_Click in parallel.</p>
         </div>
         <div class="block-body field-grid">
           <Field label="View event name" for="viewEventName" hint="Landing page always fires PageView; this field is no longer applied.">
-            <input id="viewEventName" name="viewEventName" value={link.view_event_name} />
+            <select id="viewEventName" name="viewEventName">
+              <option value="PageView" selected={link.view_event_name === "PageView"}>PageView</option>
+              <option value="ViewContent" selected={link.view_event_name === "ViewContent"}>ViewContent</option>
+            </select>
           </Field>
           <Field label="Click event name" for="clickEventName" hint="The streaming tap = your conversion. Default: Lead (pre-release), ViewContent (live)">
-            <input id="clickEventName" name="clickEventName" value={link.click_event_name ?? ""} placeholder="Lead / ViewContent" />
+            <select id="clickEventName" name="clickEventName">
+              <option value="ViewContent" selected={(link.click_event_name ?? "ViewContent") === "ViewContent"}>ViewContent</option>
+              <option value="Lead" selected={link.click_event_name === "Lead"}>Lead</option>
+              <option value="Stream_Click" selected={link.click_event_name === "Stream_Click"}>Stream_Click</option>
+            </select>
           </Field>
-          <Field label="Paid click event" for="paidClickEventName" hint="Extra event that also fires for fbclid/meta/paid taps (separate from ViewContent).">
-            <input id="paidClickEventName" name="paidClickEventName" value={link.paid_click_event_name} placeholder="Stream_Click_Paid" />
+          <Field label="Learning event" for="learningClickEventName" hint="Optional parallel signal. Select Stream_Click to collect data without replacing ViewContent.">
+            <select id="learningClickEventName" name="learningClickEventName">
+              <option value="" selected={!link.learning_click_event_name}>None</option>
+              <option value="ViewContent" selected={link.learning_click_event_name === "ViewContent"}>ViewContent</option>
+              <option value="Lead" selected={link.learning_click_event_name === "Lead"}>Lead</option>
+              <option value="Stream_Click" selected={link.learning_click_event_name === "Stream_Click"}>Stream_Click</option>
+            </select>
           </Field>
         </div>
       </section>
@@ -269,7 +281,7 @@ const identityBadges = [
         mode: value("#mode"),
         viewEventName: value("#viewEventName"),
         clickEventName: clickEventName || null,
-        paidClickEventName: value("#paidClickEventName") || "Stream_Click_Paid",
+        learningClickEventName: value("#learningClickEventName") || null,
         spotifyOpenBehavior: value("#spotifyOpenBehavior") || "web",
         spotifyContextUrl: value("#spotifyContextUrl") || null,
         pageBackgroundStyle: form.querySelector("input[name='pageBackgroundStyle']:checked")?.value || "blur",
