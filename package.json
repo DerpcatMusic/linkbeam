@@ -21,14 +21,14 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14",
     "astro": "^7",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.9",
-    "@cloudflare/workers-types": "^4.20260621.0",
-    "@types/node": "^26.1.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.16",
-    "wrangler": "^4.105.0"
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20260929.1",
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2",
+    "wrangler": "^4.143.0"
   }
 }
