@@ -6,4 +6,4 @@
 
 - [ ] One concern per PR
 - [ ] Tests added or updated where behavior changed
-- [ ] `bun run check` / `bun run build` pass locally
+- [ ] `bun run test` and `bun run smoke` pass locally (smoke includes type checking and the production build)
