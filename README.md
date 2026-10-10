@@ -2,6 +2,16 @@
 
 **Fast first-party music smartlinks** — self-hosted on Cloudflare Workers with edge-rendered link pages, first-party analytics, and server-side Meta Pixel/CAPI.
 
+<!-- derpcat-support -->
+<p align="center">
+  <a href="https://www.patreon.com/derpcatmusic">
+    <img src=".github/support-derpcat.svg" alt="Donate to Derpcat on Patreon — support my open-source work and help me keep building and maintaining free tools." width="800">
+  </a>
+  <br>
+  <a href="https://www.patreon.com/derpcatmusic"><strong>❤️ Support me on Patreon</strong></a>
+</p>
+<!-- /derpcat-support -->
+
 **Documentation:** [derpcatmusic.github.io/linkbeam](https://derpcatmusic.github.io/linkbeam)
 
 **AI setup prompt:** [derpcatmusic.github.io/linkbeam/ai.html](https://derpcatmusic.github.io/linkbeam/ai.html)
